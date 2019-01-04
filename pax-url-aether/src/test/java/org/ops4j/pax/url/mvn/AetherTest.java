@@ -19,14 +19,21 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.net.URLStreamHandlerFactory;
 import java.util.Properties;
 
 import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Repository;
+import org.apache.maven.settings.RepositoryPolicy;
+import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.ops4j.pax.url.mvn.internal.AetherBasedResolver;
 import org.ops4j.pax.url.mvn.internal.config.MavenConfigurationImpl;
@@ -40,6 +47,7 @@ import org.slf4j.LoggerFactory;
 public class AetherTest {
 
     private static Logger LOG = LoggerFactory.getLogger( AetherTest.class );
+
 
     @Test
     public void resolveArtifact()
@@ -83,7 +91,86 @@ public class AetherTest {
         }
         
     }
-    
+
+    @Test
+    public void resolveS3() throws DependencyCollectionException, ArtifactResolutionException, IOException {
+        //you need to place the artifact on S3 before.
+
+        setupS3UrlHandler();
+        Properties p = new Properties();
+        MavenConfigurationImpl config = new MavenConfigurationImpl( new PropertiesPropertyResolver( p ), ServiceConstants.PID );
+        config.setSettings( getS3Settings() );
+
+        AetherBasedResolver aetherBasedResolver = new AetherBasedResolver( config );
+        aetherBasedResolver.resolve( "org.talend.daikon", "daikonX", "jar", "jar", "0.29.0-SNAPSHOT" );
+        aetherBasedResolver.close();
+    }
+
+    private void setupS3UrlHandler(){
+        //This is adding an URL handler for s3 so that pax does not fail, but it does not use it :(
+
+        // If the URL above failed, the mvn protocol needs to be installed.
+        // not advice create a wrap URLStreamHandlerFactory class now
+        try {
+            final Field factoryField = URL.class.getDeclaredField("factory");
+            factoryField.setAccessible(true);
+            final Field lockField = URL.class.getDeclaredField("streamHandlerLock");
+            lockField.setAccessible(true);
+
+            synchronized (lockField.get(null)) {
+                final URLStreamHandlerFactory factory = (URLStreamHandlerFactory) factoryField.get(null);
+                // avoid the factory already defined error
+                if (factory != null) {
+                    return;
+                }
+
+                URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory() {
+
+                    @Override
+                    public URLStreamHandler createURLStreamHandler(String protocol) {
+                        if ("s3".equals(protocol)) {
+                            return new URLStreamHandler() {
+                                @Override
+                                protected URLConnection openConnection(URL u) throws IOException {
+                                    return null;
+                                }
+                            };
+                        } else {
+                            return null;
+                        }
+                    }
+
+                });
+            }
+        } catch (Exception exception) {
+            LOG.warn(exception.getMessage());
+        }
+    }
+
+    private Settings getS3Settings()
+    {
+        Settings settings = new Settings();
+        settings.setLocalRepository( getCache().toURI().toASCIIString() );
+        Profile centralProfile = new Profile();
+        centralProfile.setId( "central" );
+        //s3
+        Repository s3 = new Repository();
+        s3.setId( "s3" );
+        s3.setUrl( "s3://org-talend-maven-repo/snapshot");
+        s3.setSnapshots(new RepositoryPolicy());
+        centralProfile.addRepository( s3 );
+        Server s3Server = new Server();
+        s3Server.setId("s3");
+        s3Server.setUsername(System.getProperty("minio.account.name"));
+        s3Server.setPassword(System.getProperty("minio.account.key"));
+        settings.addServer(s3Server);
+
+        settings.addProfile( centralProfile );
+        settings.addActiveProfile( "central" );
+        return settings;
+    }
+
+
     @Test
     public void testCachingOfRanges()
         throws DependencyCollectionException, ArtifactResolutionException, IOException

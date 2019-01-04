@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 
+import com.gkatzioura.maven.cloud.s3.S3StorageWagon;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
@@ -55,6 +56,8 @@ import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecryptionResult;
+import org.apache.maven.wagon.ConnectionException;
+import org.apache.maven.wagon.Wagon;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.aether.ConfigurationProperties;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -926,6 +929,7 @@ public class AetherBasedResolver implements MavenResolver {
         DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
 
         locator.setServices( WagonProvider.class, new ManualWagonProvider( m_client, m_config.getTimeout() ) );
+
         locator.addService( TransporterFactory.class, WagonTransporterFactory.class );
         locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
 
@@ -953,4 +957,6 @@ public class AetherBasedResolver implements MavenResolver {
 
         return locator.getService( RepositorySystem.class );
     }
+
+
 }

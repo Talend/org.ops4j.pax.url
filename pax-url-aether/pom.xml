@@ -111,6 +111,14 @@
     </build>
 
     <dependencies>
+        <!-- added to test S3 wagon !!!!!! it comes with mor recent dependencies and make some test fails -->
+        <!-- I have no time to fix the dependencies.-->
+        <dependency>
+            <groupId>com.gkatzioura.maven.cloud</groupId>
+            <artifactId>s3-storage-wagon</artifactId>
+            <version>1.7</version>
+        </dependency>
+
 
         <!-- Embeded dependencies (not transitive) -->
         <dependency>
@@ -266,6 +274,11 @@
                 <exclusion>
                     <groupId>nekohtml</groupId>
                     <artifactId>xercesMinimal</artifactId>
+                </exclusion>
+                <!-- removed to test S3 wagon that comes with a more recent version of wagon-api and httpclient -->@
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
