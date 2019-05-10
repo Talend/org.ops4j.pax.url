@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Properties;
 
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
@@ -38,13 +39,12 @@ import org.slf4j.LoggerFactory;
  */
 public class GlobalUpdatePolicyTest
 {
-
     /**
      * Test project used to deploy snapshots.
      */
     static final String GROUP = "org.ops4j.pax.url";
     static final String ARTIFACT = "pax-url-aether-test";
-    static final String VERSION = "1.0.0-SNAPSHOT";
+    static final String VERSION = "1.0.0";
     static final String TYPE = "jar";
 
     /**
@@ -94,15 +94,15 @@ public class GlobalUpdatePolicyTest
      * <p>
      * Use alternative local repository different from default user repository.
      */
-    private void mavenDeploy() throws Exception
+    private void mavenDeploy(String suffix) throws Exception
     {
-
         InvocationRequest request = new DefaultInvocationRequest();
         request.setLocalRepositoryDirectory( REPO );
         request.setPomFile( POM );
         request.setGoals( Collections.singletonList( "deploy" ) );
         Properties properties = new Properties();
         properties.setProperty( "TEST_REPO", REMOTE_REPO.toURI().toURL().toString() );
+        properties.setProperty( "SUFFIX", suffix );
         request.setProperties( properties );
 
         Invoker invoker = new DefaultInvoker();
@@ -118,15 +118,14 @@ public class GlobalUpdatePolicyTest
         InvocationResult result = invoker.execute( request );
 
         assertTrue( "deploy success", result.getExitCode() == 0 );
-
     }
 
     /**
      * Use custom test settings.
+     * @param updateReleases whether we allow to update locally available non-SNAPSHOT artifacts
      */
-    private MavenConfiguration testConfig() throws Exception
+    private MavenConfiguration testConfig(boolean updateReleases) throws Exception
     {
-
         final Properties props = new Properties();
 
         /** Relax SSL requirements. */
@@ -137,13 +136,18 @@ public class GlobalUpdatePolicyTest
         props.setProperty( ServiceConstants.PID + "."
                 + ServiceConstants.PROPERTY_GLOBAL_UPDATE_POLICY, "always" );
 
+        props.setProperty( ServiceConstants.PID + "."
+                + ServiceConstants.PROPERTY_LOCAL_REPOSITORY, "target/localrepo_" + (new Date().getTime()) );
+
+        props.setProperty( ServiceConstants.PID + "."
+                + ServiceConstants.PROPERTY_UPDATE_RELEASES, Boolean.toString(updateReleases) );
+
         MavenConfiguration config = UnitHelp.getConfig( SETTINGS, props );
 
         assertEquals( false, config.getCertificateCheck() );
         assertEquals( "always", config.getGlobalUpdatePolicy() );
 
         return config;
-
     }
 
     /**
@@ -152,10 +156,36 @@ public class GlobalUpdatePolicyTest
     @Test
     public void verifySnapshotUpdates() throws Exception
     {
+        verifyUpdates("-SNAPSHOT", false /* default, not-relevant with SNAPSHOTS */);
+    }
 
+    /**
+     * Deploy two releases in sequence, resolve and ensure proper time stamp relations.
+     */
+    @Test
+    public void verifyCanonicalReleasesUpdates() throws Exception
+    {
+        verifyUpdates("", false);
+    }
+
+    /**
+     * Deploy two releases in sequence, resolve and ensure proper time stamp relations.
+     */
+    @Test
+    public void verifyNonCanonicalReleasesUpdates() throws Exception
+    {
+        verifyUpdates("", true);
+    }
+
+    /**
+     * @param suffix
+     * @param updateReleases whether we allow to update locally available non-SNAPSHOT artifacts
+     * @throws Exception
+     */
+    public void verifyUpdates(String suffix, boolean updateReleases) throws Exception
+    {
         System.setProperty("aether.updateCheckManager.sessionState", "bypass");
-
-        final AetherBasedResolver resolver = new AetherBasedResolver( testConfig() );
+        final AetherBasedResolver resolver = new AetherBasedResolver(testConfig(updateReleases));
 
         LOG.info( "init" );
 
@@ -164,10 +194,10 @@ public class GlobalUpdatePolicyTest
         LOG.info( "first" );
         final long time1;
         {
-            mavenDeploy();
+            mavenDeploy(suffix);
 
             final File file = //
-                resolver.resolve( GROUP, ARTIFACT, "", TYPE, VERSION );
+                    resolver.resolve( GROUP, ARTIFACT, "", TYPE, VERSION + suffix);
 
             time1 = file.lastModified();
         }
@@ -175,10 +205,10 @@ public class GlobalUpdatePolicyTest
         LOG.info( "second" );
         final long time2;
         {
-            mavenDeploy();
+            mavenDeploy(suffix);
 
             final File file = //
-                resolver.resolve( GROUP, ARTIFACT, "", TYPE, VERSION );
+                    resolver.resolve( GROUP, ARTIFACT, "", TYPE, VERSION + suffix );
 
             time2 = file.lastModified();
         }
@@ -191,8 +221,17 @@ public class GlobalUpdatePolicyTest
 
         assertTrue( "first is fresh", time1 > time0 );
         assertTrue( "second is fresh", time2 > time0 );
-
-        assertTrue( "second after first", time2 > time1 );
+        if ("".equals(suffix)) {
+            // releases
+            if (updateReleases) {
+                assertTrue( "second after first", time2 > time1 );
+            } else {
+                assertTrue( "second is the same as first", time2 == time1 );
+            }
+        } else {
+            // snapshots
+            assertTrue( "second after first", time2 > time1 );
+        }
 
         LOG.info( "done" );
 

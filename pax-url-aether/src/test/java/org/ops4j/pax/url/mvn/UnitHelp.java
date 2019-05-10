@@ -99,12 +99,13 @@ public class UnitHelp
             final Properties props ) 
     {
 
-        props.setProperty( ServiceConstants.PID
+        props.setProperty( ServiceConstants.PID + "."
                 + ServiceConstants.PROPERTY_SETTINGS_FILE, settingsFile.toURI()
             .toASCIIString() );
 
+        PropertiesPropertyResolver propertiesPropertyResolver = new PropertiesPropertyResolver(props);
         final MavenConfigurationImpl config = new MavenConfigurationImpl(
-            new PropertiesPropertyResolver( props ), ServiceConstants.PID );
+                propertiesPropertyResolver, ServiceConstants.PID );
         
         DefaultSettingsBuilderFactory factory = new DefaultSettingsBuilderFactory();
         DefaultSettingsBuilder builder = factory.newInstance();
@@ -121,7 +122,7 @@ public class UnitHelp
         }
 
         String localRepo = props.getProperty( ServiceConstants.PID
-            + ServiceConstants.PROPERTY_LOCAL_REPOSITORY );
+                + "." + ServiceConstants.PROPERTY_LOCAL_REPOSITORY );
         if (localRepo != null) {
             settings.setLocalRepository( localRepo );
         }
@@ -133,15 +134,15 @@ public class UnitHelp
      */
     public static File getMavenHome() throws Exception
     {
-        final String command;
+        final String[] commands;
         switch( OS.current() )
         {
             case LINUX:
             case MAC:
-                command = "mvn";
+                commands = new String[] { "mvn" };
                 break;
             case WINDOWS:
-                command = "mvn.bat";
+                commands = new String[] { "mvn.bat", "mvn.cmd" };
                 break;
             default:
                 throw new IllegalStateException( "invalid o/s" );
@@ -150,14 +151,17 @@ public class UnitHelp
         String[] pathArray = pathVar.split( File.pathSeparator );
         for( String path : pathArray )
         {
-            File file = new File( path, command );
-            if( file.exists() && file.isFile() && file.canExecute() )
+            for( String cmd : commands )
             {
-                /** unwrap symbolic links */
-                File exec = file.getCanonicalFile();
-                /** assume ${maven.home}/bin/exec convention */
-                File home = exec.getParentFile().getParentFile();
-                return home;
+                File file = new File( path, cmd );
+                if( file.exists() && file.isFile() && file.canExecute() )
+                {
+                    /** unwrap symbolic links */
+                    File exec = file.getCanonicalFile();
+                    /** assume ${maven.home}/bin/exec convention */
+                    File home = exec.getParentFile().getParentFile();
+                    return home;
+                }
             }
         }
         throw new IllegalStateException( "Maven home not found." );

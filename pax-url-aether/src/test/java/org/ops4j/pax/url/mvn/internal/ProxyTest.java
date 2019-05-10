@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.net.URL;
@@ -83,8 +84,10 @@ public class ProxyTest {
         File file = new File("target/test-classes/settings-proxy1.xml");
 
         Properties settings = new Properties();
-        settings.setProperty(TEST_PID + "." + ServiceConstants.PROPERTY_LOCAL_REPOSITORY, repoPath);
-        settings.setProperty(TEST_PID + "." + ServiceConstants.PROPERTY_REPOSITORIES, "http://qfdqfqfqf.fra@id=fake");
+        settings.setProperty( TEST_PID + "." + ServiceConstants.PROPERTY_LOCAL_REPOSITORY, repoPath );
+        settings.setProperty( TEST_PID + "." + ServiceConstants.PROPERTY_GLOBAL_CHECKSUM_POLICY, "ignore" );
+        settings.setProperty( TEST_PID + "." + ServiceConstants.PROPERTY_REPOSITORIES,
+            "http://qfdqfqfqf.fra@id=fake" );
         MavenConfiguration config = UnitHelp.getConfig(file, settings);
 
         Connection c =
@@ -92,32 +95,40 @@ public class ProxyTest {
                         new AetherBasedResolver(config));
         c.getInputStream();
 
-        assertEquals("the artifact must be downloaded", true,
-                new File(localRepo, "ant/ant/1.5.1/ant-1.5.1.jar").exists());
-
+        assertTrue( "the artifact must be downloaded", new File( localRepo,
+            "ant/ant/1.5.1/ant-1.5.1.jar" ).exists() );
+        
         // test for PAXURL-209
         assertThat(System.getProperty("http.proxyHost"), is(nullValue()));
     }
 
     @Test
-    public void javaProxy() throws Exception {
+    public void javaProxy() throws Exception
+    {
         System.setProperty("http.proxyHost", "localhost");
         System.setProperty("http.proxyPort", "8778");
+        String repoPath = "target/localrepo_" + UUID.randomUUID();
 
-        File file = new File("target/test-classes/settings-no-mirror.xml");
+        Properties properties = new Properties();
+        properties.setProperty( TEST_PID + "." + ServiceConstants.PROPERTY_LOCAL_REPOSITORY, repoPath );
+        properties.setProperty( TEST_PID + "." + ServiceConstants.PROPERTY_GLOBAL_CHECKSUM_POLICY, "ignore" );
+        properties.setProperty( TEST_PID + "." + ServiceConstants.PROPERTY_REPOSITORIES,
+            "http://qfdqfqfqf.fra@id=fake" );
 
-        Properties settings = new Properties();
-        settings.setProperty(TEST_PID + "." + ServiceConstants.PROPERTY_LOCAL_REPOSITORY, repoPath);
-        settings.setProperty(TEST_PID + "." + ServiceConstants.PROPERTY_REPOSITORIES, "http://qfdqfqfqf.fra@id=fake");
-        MavenConfiguration config = UnitHelp.getConfig(file, settings);
+        File file = new File( "target/test-classes/settings-no-mirror.xml" );
+        MavenConfiguration config = UnitHelp.getConfig( file, properties );
+        File localRepo = new File( repoPath );
+        // you must exist.
+        localRepo.mkdirs();
 
-        Connection c =
-                new Connection(new URL(null, "mvn:ant/ant/1.5.1", new org.ops4j.pax.url.mvn.Handler()),
-                        new AetherBasedResolver(config));
+        Connection c = new Connection( new URL( null, "mvn:ant/ant/1.5.1", new org.ops4j.pax.url.mvn.Handler() ),
+                                       new AetherBasedResolver( config ) );
         c.getInputStream();
 
-        assertEquals("the artifact must be downloaded", true,
-                new File(localRepo, "ant/ant/1.5.1/ant-1.5.1.jar").exists());
+        assertTrue( "the artifact must be downloaded", new File( localRepo,
+            "ant/ant/1.5.1/ant-1.5.1.jar" ).exists() );
+        System.clearProperty("http.proxyHost");
+        System.clearProperty("http.proxyPort");
     }
 
     private AetherBasedResolver createResolver(String schema) {
@@ -335,4 +346,5 @@ public class ProxyTest {
         // because https proxy only work for https url
         assertThat(proxy, is(nullValue()));
     }
+
 }

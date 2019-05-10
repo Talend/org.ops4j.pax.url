@@ -26,10 +26,14 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Repository;
@@ -43,7 +47,6 @@ import org.apache.maven.settings.building.SettingsBuildingResult;
 import org.ops4j.lang.NullArgumentException;
 import org.ops4j.pax.url.mvn.ServiceConstants;
 import org.ops4j.util.property.PropertyResolver;
-import org.ops4j.util.property.PropertyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +58,7 @@ import org.slf4j.LoggerFactory;
  * @see MavenConfiguration
  * @since August 11, 2007
  */
-public class MavenConfigurationImpl extends PropertyStore implements MavenConfiguration {
+public class MavenConfigurationImpl implements MavenConfiguration {
 
     /**
      * Logger.
@@ -71,6 +74,7 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
      * Repositories separator.
      */
     private final static String REPOSITORIES_SEPARATOR = ",";
+    private final static String REPOSITORIES_SEPARATOR_SPLIT = "\\s*,\\s*";
     /**
      * Use a default timeout of 5 seconds.
      */
@@ -100,7 +104,7 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
 
         m_pid = pid == null ? "" : pid + ".";
         m_propertyResolver = propertyResolver;
-        settings = buildSettings(getLocalRepoPath(propertyResolver), getSettingsPath(),
+        settings = buildSettings(getLocalRepoPath(propertyResolver), getSettingsFileUrl(),
             useFallbackRepositories());
     }
 
@@ -226,12 +230,12 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
             // build repositories list
             final List<MavenRepositoryURL> defaultRepositoriesProperty = new ArrayList<MavenRepositoryURL>();
             if (defaultRepositoriesProp != null && defaultRepositoriesProp.trim().length() > 0) {
-                String[] repositories = defaultRepositoriesProp.split(REPOSITORIES_SEPARATOR);
+                String[] repositories = defaultRepositoriesProp.split(REPOSITORIES_SEPARATOR_SPLIT);
                 for (String repositoryURL : repositories) {
                     defaultRepositoriesProperty.add(new MavenRepositoryURL(repositoryURL.trim()));
                 }
             }
-            LOGGER.trace("Using repositories [" + defaultRepositoriesProperty + "]");
+            LOGGER.trace("Using default repositories [" + defaultRepositoriesProperty + "]");
             return set(m_pid + ServiceConstants.PROPERTY_DEFAULT_REPOSITORIES,
                 defaultRepositoriesProperty);
         }
@@ -267,7 +271,7 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
                 String init = (repositoriesProp == null) ? "" : repositoriesProp.substring(1);
                 StringBuilder builder = new StringBuilder(init);
                 Map<String, Profile> profiles = settings.getProfilesAsMap();
-                for (String activeProfile : settings.getActiveProfiles()) {
+                for (String activeProfile : getActiveProfiles(true)) {
                     Profile profile = profiles.get(activeProfile);
                     if (profile == null) {
                         continue;
@@ -311,15 +315,36 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
                 }
             }
             if (repositoriesProp != null && repositoriesProp.trim().length() > 0) {
-                String[] repositories = repositoriesProp.split(REPOSITORIES_SEPARATOR);
+                String[] repositories = repositoriesProp.split(REPOSITORIES_SEPARATOR_SPLIT);
                 for (String repositoryURL : repositories) {
-                    repositoriesProperty.add(new MavenRepositoryURL(repositoryURL.trim()));
+                    if (!"".equals(repositoryURL.trim())) {
+                        repositoriesProperty.add(new MavenRepositoryURL(repositoryURL.trim()));
+                    }
                 }
             }
-            LOGGER.trace("Using repositories [" + repositoriesProperty + "]");
+            LOGGER.trace("Using remote repositories [" + repositoriesProperty + "]");
             return set(m_pid + ServiceConstants.PROPERTY_REPOSITORIES, repositoriesProperty);
         }
         return get(m_pid + ServiceConstants.PROPERTY_REPOSITORIES);
+    }
+
+    /**
+     * Returns active profile names from current settings
+     * @param alsoActiveByDefault if <code>true</code>, also return these profile names that are
+     * <code>&lt;activeByDefault&gt;</code>
+     * @return
+     */
+    private Collection<String> getActiveProfiles(boolean alsoActiveByDefault) {
+        Set<String> profileNames = new LinkedHashSet<String>(settings.getActiveProfiles());
+        if (alsoActiveByDefault) {
+            for (Profile profile : settings.getProfiles()) {
+                if (profile.getActivation() != null && profile.getActivation().isActiveByDefault()) {
+                    // TODO: check other activations - file/jdk/os/property?
+                    profileNames.add(profile.getId());
+                }
+            }
+        }
+        return profileNames;
     }
 
     private void addPolicy(StringBuilder builder, String policy, String option) {
@@ -359,10 +384,11 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
 
     /**
      * Resolves local repository directory by using the following resolution:<br/>
-     * 1. looks for a configuration property named localRepository; 2. looks for a framework
-     * property/system setting localRepository;<br/>
+     * 1. looks for a configuration property named {@code localRepository};<br/>
+     * 2. looks for a framework property/system setting localRepository;<br/>
      * 3. looks in settings.xml (see settings.xml resolution);<br/>
-     * 4. falls back to ${user.home}/.m2/repository.
+     * 4. looks for system property {@code maven.repo.local} (PAXURL-231);<br/>
+     * 5. falls back to ${user.home}/.m2/repository.
      * 
      * @see MavenConfiguration#getLocalRepository()
      */
@@ -373,6 +399,17 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
             // if not set get local repository from maven settings
             if (spec == null && settings != null) {
                 spec = settings.getLocalRepository();
+            }
+            // check -Dmaven.repo.local property - useful for batch runs within external maven build
+            // that accept maven.repo.local as alternative local repository
+            if (spec == null) {
+                spec = System.getProperty("maven.repo.local");
+                if (spec != null) {
+                    if (!new File(spec).isDirectory()) {
+                        LOGGER.warn("Can't use maven.repo.local=" + spec + ". Location invalid.");
+                        spec = null;
+                    }
+                }
             }
             if (spec == null) {
                 spec = System.getProperty("user.home") + "/.m2/repository";
@@ -460,6 +497,7 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
      * 
      * @deprecated This method has side-effects and is only used in the "old" resolver.
      */
+    @Deprecated
     public void enableProxy(URL url) {
         final String protocol = url.getProtocol();
 
@@ -581,22 +619,11 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
         }
     }
 
-    private String getSettingsPath() {
-         URL url = getSettingsFileUrl();
-        try {
-            return url == null ? null : new File(url.toURI().getSchemeSpecificPart()).getAbsolutePath();
-        } catch (URISyntaxException e) {
-            //this should never happend but we handle it anyway.
-            return url.getPath();
-        }
-    }
-
     private String getLocalRepoPath(PropertyResolver props) {
         return props.get(ServiceConstants.PID + "." + ServiceConstants.PROPERTY_LOCAL_REPOSITORY);
     }
 
-    private Settings buildSettings(String localRepoPath, String settingsPath,
-        boolean useFallbackRepositories) {
+    private Settings buildSettings(String localRepoPath, URL settingsPath, boolean useFallbackRepositories) {
         Settings settings;
         if (settingsPath == null) {
             settings = new Settings();
@@ -605,7 +632,15 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
             DefaultSettingsBuilderFactory factory = new DefaultSettingsBuilderFactory();
             DefaultSettingsBuilder builder = factory.newInstance();
             SettingsBuildingRequest request = new DefaultSettingsBuildingRequest();
-            request.setUserSettingsFile(new File(settingsPath));
+            try {
+                if (settingsPath.toURI().isOpaque()) {
+                    request.setUserSettingsFile(new File(settingsPath.getPath()));
+                } else {
+                    request.setUserSettingsFile(new File(settingsPath.toURI()));
+                }
+            } catch (URISyntaxException e) {
+                // should never happens because it is returned by safeGetFile
+            }
             try {
                 SettingsBuildingResult result = builder.build(request);
                 settings = result.getEffectiveSettings();
@@ -619,7 +654,7 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
             Profile fallbackProfile = new Profile();
             Repository central = new Repository();
             central.setId("central");
-            central.setUrl("http://repo1.maven.org/maven2");
+            central.setUrl("https://repo1.maven.org/maven2");
             fallbackProfile.setId("fallback");
             fallbackProfile.setRepositories(Arrays.asList(central));
             settings.addProfile(fallbackProfile);
@@ -658,4 +693,90 @@ public class MavenConfigurationImpl extends PropertyStore implements MavenConfig
         }
         return get(key);
     }
+
+    @Override
+    public <T> T getProperty(String name, T defaultValue, Class<T> clazz) {
+        if (!contains(m_pid + name)) {
+            String value = m_propertyResolver.get(m_pid + name);
+            return set(m_pid + name, value == null ? defaultValue : convert(value, clazz));
+        }
+        return get(m_pid + name);
+    }
+
+    @Override
+    public String getPid() {
+        return m_pid;
+    }
+
+    /**
+     * Supports String to [ Integer, Long, String, Boolean ] conversion
+     * @param value
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T convert(String value, Class<T> clazz) {
+        if (String.class == clazz) {
+            return (T) value;
+        }
+        if (Integer.class == clazz) {
+            return (T) Integer.valueOf(value);
+        }
+        if (Long.class == clazz) {
+            return (T) Long.valueOf(value);
+        }
+        if (Boolean.class == clazz) {
+            return (T) Boolean.valueOf("true".equals(value));
+        }
+        throw new IllegalArgumentException("Can't convert \"" + value + "\" to " + clazz + ".");
+    }
+
+    /**
+     * Map of properties.
+     */
+    private final Map<String, Object> m_properties = new ConcurrentHashMap<>();
+
+    private static final Object NULL_VALUE = new Object();
+
+    /**
+     * Returns true if the the property was set.
+     *
+     * @param propertyName name of the property
+     *
+     * @return true if property is set
+     */
+    public boolean contains( final String propertyName )
+    {
+        return m_properties.containsKey( propertyName );
+    }
+
+    /**
+     * Sets a property.
+     *
+     * @param propertyName  name of the property to set
+     * @param propertyValue value of the property to set
+     *
+     * @return the value of property set (fluent api)
+     */
+    public <T> T set( final String propertyName, final T propertyValue )
+    {
+        m_properties.put( propertyName, propertyValue != null ? propertyValue : NULL_VALUE );
+        return propertyValue;
+    }
+
+    /**
+     * Returns the property by name.
+     *
+     * @param propertyName name of the property
+     *
+     * @return property value
+     */
+    @SuppressWarnings( "unchecked" )
+    public <T> T get( final String propertyName )
+    {
+        Object v = m_properties.get( propertyName );
+        return v != NULL_VALUE ? (T) v : null;
+    }
+
 }

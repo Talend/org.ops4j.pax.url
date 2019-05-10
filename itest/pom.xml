@@ -1,17 +1,47 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <artifactId>url</artifactId>
         <groupId>org.ops4j.pax</groupId>
-        <version>2.4.6-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <artifactId>url</artifactId>
+        <version>2.6.1</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
+
     <groupId>org.ops4j.pax.url</groupId>
     <artifactId>itest</artifactId>
     <packaging>pom</packaging>
+
     <name>OPS4J Pax Url - Integration Tests</name>
 
+    <properties>
+        <skipTests>false</skipTests>
+    </properties>
+
     <profiles>
+
         <profile>
             <id>matrix</id>
             <modules>
@@ -20,6 +50,7 @@
                 <module>src/it/itest-obr</module>
             </modules>
         </profile>
+
         <profile>
             <id>invoker</id>
             <activation>
@@ -30,8 +61,8 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-invoker-plugin</artifactId>
-                        <version>1.9</version>
                         <configuration>
+                            <skipInvocation>${skipTests}</skipInvocation>
                             <goals>
                                 <goal>clean</goal>
                                 <goal>test</goal>
@@ -45,7 +76,7 @@
                                     <goal>run</goal>
                                 </goals>
                                 <configuration>
-                                    <cloneProjectsTo>${project.build.directory}/aether</cloneProjectsTo>
+                                    <cloneProjectsTo>${project.build.directory}/it/aether</cloneProjectsTo>
                                     <pom>src/it/itest-aether/pom.xml</pom>
                                 </configuration>
                             </execution>
@@ -58,7 +89,7 @@
                                     <profiles>
                                         <profile>eclipse-3.6</profile>
                                     </profiles>
-                                    <cloneProjectsTo>${project.build.directory}/aether-osgi-eclipse-3.6</cloneProjectsTo>
+                                    <cloneProjectsTo>${project.build.directory}/it/aether-osgi-eclipse-3.6</cloneProjectsTo>
                                     <pom>src/it/itest-aether-osgi/pom.xml</pom>
                                 </configuration>
                             </execution>
@@ -71,7 +102,7 @@
                                     <profiles>
                                         <profile>eclipse-3.7</profile>
                                     </profiles>
-                                    <cloneProjectsTo>${project.build.directory}/aether-osgi-eclipse-3.7</cloneProjectsTo>
+                                    <cloneProjectsTo>${project.build.directory}/it/aether-osgi-eclipse-3.7</cloneProjectsTo>
                                     <pom>src/it/itest-aether-osgi/pom.xml</pom>
                                 </configuration>
                             </execution>
@@ -81,7 +112,7 @@
                                     <goal>run</goal>
                                 </goals>
                                 <configuration>
-                                    <cloneProjectsTo>${project.build.directory}/obr</cloneProjectsTo>
+                                    <cloneProjectsTo>${project.build.directory}/it/obr</cloneProjectsTo>
                                     <pom>src/it/itest-obr/pom.xml</pom>
                                 </configuration>
                             </execution>
@@ -90,6 +121,7 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>eclipse-3.6</id>
             <dependencyManagement>
@@ -102,6 +134,7 @@
                 </dependencies>
             </dependencyManagement>
         </profile>
+
         <profile>
             <id>eclipse-3.7</id>
             <activation>
@@ -117,15 +150,7 @@
                 </dependencies>
             </dependencyManagement>
         </profile>
+
     </profiles>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>retrotranslator-maven-plugin</artifactId>
-                <inherited>false</inherited>
-            </plugin>
-        </plugins>
-    </build>
 </project>
