@@ -32,17 +32,23 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
-import org.apache.maven.wagon.providers.http.AbstractHttpClientWagon;
-import org.apache.maven.wagon.providers.http.HttpMethodConfiguration;
+import org.apache.maven.wagon.ConnectionException;
+import org.apache.maven.wagon.authentication.AuthenticationException;
+import org.apache.maven.wagon.authentication.AuthenticationInfo;
 import org.apache.maven.wagon.providers.http.HttpWagon;
 import org.apache.maven.wagon.proxy.ProxyInfo;
+import org.apache.maven.wagon.proxy.ProxyInfoProvider;
 import org.apache.maven.wagon.repository.Repository;
+import org.apache.maven.wagon.shared.http.AbstractHttpClientWagon;
+import org.apache.maven.wagon.shared.http.HttpMethodConfiguration;
+import org.ops4j.net.URLUtils;
 
 /**
  * An http wagon provider providing more configuration options
@@ -54,9 +60,10 @@ public class ConfigurableHttpWagon extends HttpWagon {
 
     private final CloseableHttpClient client;
 
-    public ConfigurableHttpWagon(CloseableHttpClient client, int timeout) {
+    public ConfigurableHttpWagon(CloseableHttpClient client, int readTimeout, int connectionTimeout) {
         this.client = client;
-        setTimeout(timeout);
+        setReadTimeout(readTimeout);
+        setTimeout(connectionTimeout);
     }
 
     @Override
@@ -70,7 +77,7 @@ public class ConfigurableHttpWagon extends HttpWagon {
 
         RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
         // WAGON-273: default the cookie-policy to browser compatible
-        requestConfigBuilder.setCookieSpec( CookieSpecs.BROWSER_COMPATIBILITY );
+        requestConfigBuilder.setCookieSpec( CookieSpecs.DEFAULT );
 
         Repository repo = getRepository();
         ProxyInfo proxyInfo = getProxyInfo( repo.getProtocol(), repo.getHost() );
@@ -90,9 +97,22 @@ public class ConfigurableHttpWagon extends HttpWagon {
         else
         {
             requestConfigBuilder.setSocketTimeout( getReadTimeout() );
+            requestConfigBuilder.setConnectTimeout( getTimeout() );
+            if ( httpMethod instanceof HttpPut )
+            {
+                requestConfigBuilder.setExpectContinueEnabled( true );
+            }
         }
 
-        getLocalContext().setRequestConfig(requestConfigBuilder.build());
+        if ( httpMethod instanceof HttpPut )
+        {
+            requestConfigBuilder.setRedirectsEnabled( false );
+        }
+
+        HttpClientContext localContext = HttpClientContext.create();
+        localContext.setCredentialsProvider( getCredentialsProvider() );
+        localContext.setAuthCache( getAuthCache() );
+        localContext.setRequestConfig( requestConfigBuilder.build() );
 
         if ( config != null && config.isUsePreemptive() )
         {
@@ -138,15 +158,41 @@ public class ConfigurableHttpWagon extends HttpWagon {
                 }
             }
         }
-
-        return client.execute( httpMethod, getLocalContext() );
+        
+        return client.execute( httpMethod, localContext );
     }
 
-    private AuthCache getAuthCache() {
+    @Override
+    public void connect(Repository repository, AuthenticationInfo authenticationInfo, ProxyInfoProvider proxyInfoProvider)
+            throws ConnectionException, AuthenticationException {
+        if (repository == null) {
+            throw new IllegalStateException("The repository specified cannot be null.");
+        }
+
+        if (authenticationInfo == null) {
+            authenticationInfo = new AuthenticationInfo();
+        }
+
+        if (authenticationInfo.getUserName() == null) {
+            // Get user/pass that were encoded in the URL.
+            if (repository.getUsername() != null) {
+                // Need to decode username/password because it may contain encoded characters (http://www.w3schools.com/tags/ref_urlencode.asp)
+                // A common encoding is to provide a username as an email address like user%40domain.org
+                authenticationInfo.setUserName(URLUtils.decode(repository.getUsername()));
+                if (repository.getPassword() != null && authenticationInfo.getPassword() == null) {
+                    authenticationInfo.setPassword(URLUtils.decode(repository.getPassword()));
+                }
+            }
+        }
+
+        super.connect(repository, authenticationInfo, proxyInfoProvider);
+    }
+
+    protected AuthCache getAuthCache() {
         return getField(AuthCache.class, "authCache");
     }
 
-    private CredentialsProvider getCredentialsProvider() {
+    protected CredentialsProvider getCredentialsProvider() {
         return getField(CredentialsProvider.class, "credentialsProvider");
     }
 

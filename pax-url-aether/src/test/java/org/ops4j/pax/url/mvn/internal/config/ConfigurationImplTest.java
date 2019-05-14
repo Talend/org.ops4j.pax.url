@@ -24,20 +24,35 @@ import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Repository;
 import org.apache.maven.settings.Settings;
+import org.apache.maven.settings.building.DefaultSettingsBuilder;
+import org.apache.maven.settings.building.DefaultSettingsBuilderFactory;
+import org.apache.maven.settings.building.DefaultSettingsBuildingRequest;
+import org.apache.maven.settings.building.SettingsBuildingException;
+import org.apache.maven.settings.building.SettingsBuildingRequest;
+import org.apache.maven.settings.building.SettingsBuildingResult;
+import org.apache.maven.settings.building.SettingsProblem;
 import org.junit.Assume;
 import org.junit.Test;
 import org.ops4j.io.FileUtils;
+import org.ops4j.util.property.PropertiesPropertyResolver;
 import org.ops4j.util.property.PropertyResolver;
 
 public class ConfigurationImplTest
@@ -322,6 +337,28 @@ public class ConfigurationImplTest
     }
 
     @Test
+    public void getMessyRepositoriesWithMoreRepositories()
+        throws MalformedURLException
+    {
+        PropertyResolver propertyResolver = createMock( PropertyResolver.class );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn(
+            "file:repository1/@id=repository1 , file:repository2/@id=repository2, "
+        );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        replay( propertyResolver );
+        MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
+        List<MavenRepositoryURL> repositories = config.getRepositories();
+        assertNotNull( "Repositories is null", repositories );
+        assertEquals( "Repositories size", 2, repositories.size() );
+        assertEquals( "Repository 1", new URL( "file:repository1/" ), repositories.get( 0 ).getURL() );
+        assertEquals( "Repository 2", new URL( "file:repository2/" ), repositories.get( 1 ).getURL() );
+        verify( propertyResolver );
+    }
+
+    @Test
     public void getRepositoriesFromSettings()
         throws MalformedURLException
     {
@@ -555,6 +592,39 @@ public class ConfigurationImplTest
         verify( propertyResolver );
     }
 
+    private Settings buildSettings( String settingsPath )
+    {
+        Settings settings = null;
+        if( settingsPath == null )
+        {
+            settings = new Settings();
+        }
+        else
+        {
+            DefaultSettingsBuilderFactory factory = new DefaultSettingsBuilderFactory();
+            DefaultSettingsBuilder builder = factory.newInstance();
+            SettingsBuildingRequest request = new DefaultSettingsBuildingRequest();
+            request.setUserSettingsFile( new File( settingsPath ) );
+            try
+            {
+                SettingsBuildingResult result = builder.build( request );
+                assertThat( result, is( notNullValue() ) );
+                for ( SettingsProblem sp : result.getProblems() ) {
+                    if ( sp.getSeverity() != SettingsProblem.Severity.WARNING ) {
+                        fail( "There should be no serious problems in settings.xml" );
+                    }
+                }
+
+                settings = result.getEffectiveSettings();
+            }
+            catch( SettingsBuildingException exc )
+            {
+                throw new AssertionError( "cannot build settings", exc );
+            }
+        }
+        return settings;
+    }
+
     @Test
     public void getLocalRepositoryFromSettings()
         throws MalformedURLException
@@ -563,16 +633,54 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null ).atLeastOnce();
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
-        Settings settings = createMock( Settings.class );
-        expect( settings.getLocalRepository() ).andReturn( "file:somewhere/localrepository/" );
-        replay( propertyResolver, settings );
+        Settings settings = buildSettings("src/test/resources/settings/settingsWithLocalRepository.xml");
+        replay( propertyResolver );
         MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
         config.setSettings( settings );
         assertEquals( "Local repository",
-                      new URL( "file:somewhere/localrepository/" ),
-                      config.getLocalRepository().getURL()
+                      new File("repository").toURI().toURL().toString() + "/",
+                      config.getLocalRepository().getURL().toString()
         );
-        verify( propertyResolver, settings );
+        verify( propertyResolver );
+    }
+
+    @Test
+    public void getRepositoriesFromActiveProfilesInSettings()
+        throws MalformedURLException
+    {
+        PropertyResolver propertyResolver = createMock( PropertyResolver.class );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null ).atLeastOnce();
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( "false" );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( null ).anyTimes();
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null ).anyTimes();
+        Settings settings = buildSettings("src/test/resources/settings/settingsWithRepositories.xml");
+        replay( propertyResolver );
+        MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
+        config.setSettings( settings );
+        assertThat(config.getRepositories().size(), equalTo(6));
+        verify( propertyResolver );
+    }
+
+    @Test
+    public void getRepositoriesFromProfilesActiveByDefaultInSettings()
+        throws MalformedURLException
+    {
+        PropertyResolver propertyResolver = createMock( PropertyResolver.class );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null ).atLeastOnce();
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( "false" );
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( null ).anyTimes();
+        expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null ).anyTimes();
+        Settings settings = buildSettings("src/test/resources/settings/settingsWithActiveProfiles.xml");
+        replay( propertyResolver );
+        MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
+        config.setSettings( settings );
+        assertThat(config.getRepositories().size(), equalTo(3));
+        assertThat(config.getRepositories().get(0).getId(), equalTo("repository1"));
+        assertThat(config.getRepositories().get(1).getId(), equalTo("repository2"));
+        assertThat(config.getRepositories().get(2).getId(), equalTo("repository4"));
+        verify( propertyResolver );
     }
 
     @Test
@@ -640,6 +748,40 @@ public class ConfigurationImplTest
         assertNotNull(localRepository);
         assertEquals("My path/.m2/repository", localRepository);
         verify(propertyResolver);
+	}
+
+    @Test
+    public void getRepositoryProperties()
+    {
+        Properties props = new Properties();
+        PropertyResolver propertyResolver = new PropertiesPropertyResolver(props);
+        props.setProperty("org.ops4j.pax.url.mvn.i", "1");
+        props.setProperty("org.ops4j.pax.url.mvn.l", "1");
+        props.setProperty("org.ops4j.pax.url.mvn.s", "hello");
+        props.setProperty("org.ops4j.pax.url.mvn.x", "hello");
+        props.setProperty("org.ops4j.pax.url.mvn.b1", "true");
+        props.setProperty("org.ops4j.pax.url.mvn.b2", "false");
+        props.setProperty("org.ops4j.pax.url.mvn.b3", "0");
+
+        MavenConfiguration config = new MavenConfigurationImpl(propertyResolver, PID);
+        assertThat(config.getProperty("i", 42, Integer.class), equalTo(1));
+        assertThat(config.getProperty("i2", 42, Integer.class), equalTo(42));
+        assertThat(config.getProperty("l", 42L, Long.class), equalTo(1L));
+        assertThat(config.getProperty("s", "unknown", String.class), equalTo("hello"));
+        assertThat(config.getProperty("b1", false, Boolean.class), equalTo(true));
+        assertThat(config.getProperty("b2", true, Boolean.class), equalTo(false));
+        assertThat(config.getProperty("b3", true, Boolean.class), equalTo(false));
+        assertThat(config.getProperty("b4", true, Boolean.class), equalTo(true));
+        try {
+            config.getProperty("x", null, InputStream.class);
+            fail("Should not be able to convert");
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            Integer i = config.getProperty("s", null, Integer.class);
+            fail("Should throw ClassCastException, because \"s\" was already cached");
+        } catch (ClassCastException ignored) {
+        }
     }
 
 }

@@ -1,3 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -5,19 +26,17 @@
     <parent>
         <groupId>org.ops4j.pax</groupId>
         <artifactId>url</artifactId>
-        <version>2.4.5</version>
+        <version>2.6.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>org.ops4j.pax.url</groupId>
     <artifactId>pax-url-aether</artifactId>
-    <version>2.4.6-Talend</version>
+    <version>2.6.1-Talend</version>
     <packaging>bundle</packaging>
 
-    <name>OPS4J Pax Url - aether:</name>
-    <description>
-        OPS4J Pax Url - aether: protocol handler.
-    </description>
+    <name>OPS4J Pax Url - mvn:</name>
+    <description>OPS4J Pax Url - mvn: protocol handler</description>
 
     <properties>
         <bundle.symbolicName>org.ops4j.pax.url.mvn</bundle.symbolicName>
@@ -25,18 +44,240 @@
         <TEST_REPO>file:${project.build.directory}/remote-repo</TEST_REPO>
     </properties>
 
+    <dependencies>
+
+        <dependency>
+            <groupId>org.ops4j.pax.url</groupId>
+            <artifactId>pax-url-aether-support</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+
+        <!-- Embeded dependencies (not transitive) -->
+        <dependency>
+            <groupId>org.ops4j.base</groupId>
+            <artifactId>ops4j-base-lang</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.base</groupId>
+            <artifactId>ops4j-base-net</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.base</groupId>
+            <artifactId>ops4j-base-io</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.base</groupId>
+            <artifactId>ops4j-base-util-property</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.base</groupId>
+            <artifactId>ops4j-base-util-xml</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.ops4j.pax.url</groupId>
+            <artifactId>pax-url-commons</artifactId>
+            <version>${project.parent.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Provided dependencies (not transitive) -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.compendium</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Logging API (not embedded) -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- mvn stuff -->
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-spi</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-util</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-impl</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-connector-basic</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-wagon</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-resolver-provider</artifactId>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.inject</groupId>
+                    <artifactId>javax.inject</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-settings-builder</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.sonatype.plexus</groupId>
+            <artifactId>plexus-sec-dispatcher</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.sonatype.plexus</groupId>
+            <artifactId>plexus-cipher</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-provider-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-file</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-http</artifactId>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jsoup</groupId>
+                    <artifactId>jsoup</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>nekohtml</groupId>
+                    <artifactId>nekohtml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>nekohtml</groupId>
+                    <artifactId>xercesMinimal</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.objenesis</groupId>
+                    <artifactId>objenesis</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-easymock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Emulate amazon s3 -->
+        <dependency>
+            <groupId>org.eclipse.jetty.aggregate</groupId>
+            <artifactId>jetty-server</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.aggregate</groupId>
+            <artifactId>jetty-plus</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Invoke maven goals -->
+        <dependency>
+            <groupId>org.apache.maven.shared</groupId>
+            <artifactId>maven-invoker</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
     <build>
         <testResources>
             <testResource>
                 <directory>src/test/resources</directory>
                 <filtering>true</filtering>
+                <excludes>
+                    <exclude>repo2/**</exclude>
+                    <exclude>repo3/**</exclude>
+                    <exclude>repomulti/**</exclude>
+                    <exclude>repomulti_with_file/**</exclude>
+                </excludes>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>repo2/**</include>
+                    <include>repo3/**</include>
+                    <include>repomulti/**</include>
+                    <include>repomulti_with_file/**</include>
+                </includes>
             </testResource>
         </testResources>
         <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -57,6 +298,7 @@
                                     <shadedPattern>shaded.</shadedPattern>
                                     <includes>
                                         <include>org.apache.commons.codec.**</include>
+                                        <include>org.apache.commons.lang3.**</include>
                                         <include>org.apache.commons.io.**</include>
                                         <include>org.apache.commons.logging.**</include>
                                         <include>org.apache.http.**</include>
@@ -73,6 +315,25 @@
                                     </includes>
                                 </relocation>
                             </relocations>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>org/apache/commons/codec/language/**</exclude>
+                                        <exclude>org/apache/commons/lang3/arch/**</exclude>
+                                        <exclude>org/apache/commons/lang3/builder/**</exclude>
+                                        <exclude>org/apache/commons/lang3/concurrent/**</exclude>
+                                        <exclude>org/apache/commons/lang3/event/**</exclude>
+                                        <exclude>org/apache/commons/lang3/exception/**</exclude>
+                                        <exclude>org/apache/commons/lang3/math/**</exclude>
+                                        <exclude>org/apache/commons/lang3/mutable/**</exclude>
+                                        <exclude>org/apache/commons/lang3/reflect/**</exclude>
+                                        <exclude>org/apache/commons/lang3/text/**</exclude>
+                                        <exclude>org/apache/commons/lang3/time/**</exclude>
+                                        <exclude>org/apache/commons/lang3/tuple/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
@@ -109,209 +370,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-
-        <!-- Embeded dependencies (not transitive) -->
-        <dependency>
-            <groupId>org.ops4j.base</groupId>
-            <artifactId>ops4j-base-lang</artifactId>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.base</groupId>
-            <artifactId>ops4j-base-net</artifactId>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.base</groupId>
-            <artifactId>ops4j-base-io</artifactId>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.base</groupId>
-            <artifactId>ops4j-base-util-property</artifactId>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.base</groupId>
-            <artifactId>ops4j-base-util-xml</artifactId>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.url</groupId>
-            <artifactId>pax-url-commons</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Provided dependencies (not transitive) -->
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.compendium</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Logging API (not embedded) -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- mvn stuff -->
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-spi</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-util</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-impl</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-connector-basic</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-transport-wagon</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-aether-provider</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-settings-builder</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.sonatype.plexus</groupId>
-            <artifactId>plexus-sec-dispatcher</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.sonatype.plexus</groupId>
-            <artifactId>plexus-cipher</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-provider-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-file</artifactId>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-http</artifactId>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jsoup</groupId>
-                    <artifactId>jsoup</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>nekohtml</groupId>
-                    <artifactId>nekohtml</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>nekohtml</groupId>
-                    <artifactId>xercesMinimal</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Emulate amazon s3 -->
-        <dependency>
-            <groupId>org.eclipse.jetty.aggregate</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>7.3.1.v20110307</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty.aggregate</groupId>
-            <artifactId>jetty-plus</artifactId>
-            <version>7.3.1.v20110307</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Invoke maven goals -->
-        <dependency>
-            <groupId>org.apache.maven.shared</groupId>
-            <artifactId>maven-invoker</artifactId>
-            <version>2.1.1</version>
-            <scope>test</scope>
-        </dependency>
-
-    </dependencies>
-
-
 
 </project>

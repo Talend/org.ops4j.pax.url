@@ -119,8 +119,19 @@ public class Connection
         throws IOException
     {
         connect();
-        LOG.debug( "Resolving [" + url.toExternalForm() + "]" );
-        File file = m_resolver.resolve( url.toExternalForm() );
+        String mvnUrl = url.toExternalForm();
+        boolean hasRuntimeRef = false;
+        if ("runtime".equals(url.getRef())) {
+            hasRuntimeRef = true;
+            mvnUrl = mvnUrl.substring(0, mvnUrl.length() - "#runtime".length());
+        }
+        LOG.debug( "Resolving [" + mvnUrl + "]" );
+        File file = m_resolver.resolve(mvnUrl);
+        if (file == null && hasRuntimeRef) {
+            mvnUrl = url.toExternalForm();
+            LOG.debug( "Resolving [" + mvnUrl + "]" );
+            file = m_resolver.resolve(mvnUrl);
+        }
         return new FileInputStream( file );
     }
 }
