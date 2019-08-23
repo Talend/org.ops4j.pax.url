@@ -259,6 +259,7 @@
     </dependencies>
 
     <build>
+        <finalName>${artifactId}-${version}-tipaas</finalName>
         <testResources>
             <testResource>
                 <directory>src/test/resources</directory>
