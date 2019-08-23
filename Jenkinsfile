@@ -1,0 +1,89 @@
+#!/usr/bin/env groovy
+
+// The job packages osp4j_2.6.1 with Talend's patch
+// https://github.com/Talend/org.ops4j.pax.url/tree/url-2.6.1-tipaas
+
+def slackChannel = 'tic-notifications'
+def decodedJobName = env.JOB_NAME.replaceAll("%2F", "/")
+
+pipeline {
+
+    agent {
+        kubernetes {
+            label 'osp4j-build'
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: maven
+      image: jenkinsxio/builder-maven:0.1.273
+      command:
+      - cat
+      tty: true
+      resources:
+          requests:
+            memory: "5120Mi"
+            cpu: "2.0"
+          limits:
+            memory: "5120Mi"
+            cpu: "2.0"
+      volumeMounts:
+      - name: docker
+        mountPath: /var/run/docker.sock
+  volumes:
+  - name: docker
+    hostPath:
+      path: /var/run/docker.sock
+  """
+        }
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '5'))
+        timeout(time: 120, unit: 'MINUTES')
+        skipStagesAfterUnstable()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        booleanParam(name: 'SKIP_MAVEN_TEST', defaultValue: true, description: 'Pick to disable maven test')
+    }
+
+    stages {
+
+        stage('Maven clean') {
+            steps {
+                container('maven') {
+                    sh "mvn clean"
+                }
+            }
+        }
+
+        stage('Maven package') {
+            steps {
+                container('maven') {
+                    configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
+                        sh "mvn -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} package -f pax-url-aether/pom.xml"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            slackSend (color: 'good', channel: "${slackChannel}", message: "SUCCESSFUL: `${decodedJobName}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)\nDuration: ${currentBuild.durationString}")
+        }
+        unstable {
+            slackSend (color: 'warning', channel: "${slackChannel}", message: "UNSTABLE: `${decodedJobName}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+        }
+        failure {
+            slackSend (color: '#e81f3f', channel: "${slackChannel}", message: "FAILED: `${decodedJobName}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+        }
+        aborted {
+            slackSend (color: 'warning', channel: "${slackChannel}", message: "ABORTED: `${decodedJobName}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+        }
+    } 
+
+}
