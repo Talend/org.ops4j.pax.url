@@ -48,26 +48,43 @@ spec:
 
     parameters {
         booleanParam(name: 'SKIP_MAVEN_TEST', defaultValue: true, description: 'Pick to disable maven test')
+        booleanParam(name: 'PUBLISH', defaultValue: false, description: 'Pick to publish to artifacts-zl.talend.com')
     }
 
     stages {
 
         stage('Maven clean') {
-            steps {
-                container('maven') {
-                    sh "mvn clean"
-                }
+          steps {
+            container('maven') {
+              sh "mvn clean"
             }
+          }
         }
 
         stage('Maven package') {
-            steps {
-                container('maven') {
-                    configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
-                        sh "mvn -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} package -f pax-url-aether/pom.xml"
-                    }
-                }
+          steps {
+            container('maven') {
+              configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
+                sh "mvn -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} package -f pax-url-aether/pom.xml -s $MAVEN_SETTINGS"
+                archiveArtifacts artifacts: 'pax-url-aether/target/pax-url-aether-2.6.1-tipaas.jar', fingerprint: true, onlyIfSuccessful: true
+              }
             }
+          }
+        }
+
+        stage('Publlish to Nexus') {
+          when {
+              anyOf {
+                  expression { params.PUBLISH == 'True' }
+              }
+          }
+          steps {
+            container('maven') {
+              configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
+                sh "mvn deploy:deploy-file -s $MAVEN_SETTINGS -DgeneratePom=true -DrepositoryId=thirdparty-releases -DgroupId=org.ops4j.pax.url -DartifactId=pax-url-aether -Dversion=2.6.1 -Dclassifier=tipaas -Dpackaging=jar -Durl=https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases -Dfile=pax-url-aether/target/pax-url-aether-2.6.1-tipaas.jar"
+              }
+            }
+          }
         }
     }
 
@@ -84,6 +101,6 @@ spec:
         aborted {
             slackSend (color: 'warning', channel: "${slackChannel}", message: "ABORTED: `${decodedJobName}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
         }
-    } 
+    }
 
 }
