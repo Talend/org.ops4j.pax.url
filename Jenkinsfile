@@ -73,9 +73,7 @@ spec:
         }
 
         stage('Publlish to Nexus') {
-          when {
-            expression { params.PUBLISH == 'true' }
-          }
+          when { expression { params.PUBLISH } }
           steps {
             container('maven') {
               configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
