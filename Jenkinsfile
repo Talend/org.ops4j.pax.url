@@ -74,9 +74,7 @@ spec:
 
         stage('Publlish to Nexus') {
           when {
-              anyOf {
-                  expression { params.PUBLISH == 'True' }
-              }
+            expression { params.PUBLISH == 'True' }
           }
           steps {
             container('maven') {
