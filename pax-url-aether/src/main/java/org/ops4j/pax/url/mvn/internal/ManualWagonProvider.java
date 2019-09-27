@@ -19,7 +19,6 @@ package org.ops4j.pax.url.mvn.internal;
 import com.gkatzioura.maven.cloud.s3.S3StorageWagon;
 
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.providers.file.FileWagon;
 import org.eclipse.aether.transport.wagon.WagonProvider;
@@ -71,13 +70,6 @@ public class ManualWagonProvider implements WagonProvider
 
     public void release( Wagon wagon )
     {
-        if (null != s3Wagon) {
-            try {
-                s3Wagon.disconnect();
-            } catch (ConnectionException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 }
