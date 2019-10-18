@@ -19,6 +19,7 @@ package org.ops4j.pax.url.mvn.internal;
 import com.gkatzioura.maven.cloud.s3.S3StorageWagon;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.providers.file.FileWagon;
 import org.eclipse.aether.transport.wagon.WagonProvider;
@@ -32,7 +33,6 @@ public class ManualWagonProvider implements WagonProvider
 {
 
     private CloseableHttpClient client;
-    private S3StorageWagon s3Wagon;
     private int readTimeout;
     private int connectionTimeout;
 
@@ -60,7 +60,13 @@ public class ManualWagonProvider implements WagonProvider
         }
         else if (S3Constants.PROTOCOL.equalsIgnoreCase(roleHint))
         {
-            s3Wagon = new S3StorageWagon();
+            S3StorageWagon s3Wagon = new S3StorageWagon() {
+                @Override
+                public void disconnect() throws ConnectionException {
+                    super.disconnect();
+                    this.repository = null;
+                }
+            };
             s3Wagon.setPathStyleAccessEnabled("true");
             return s3Wagon;
         }

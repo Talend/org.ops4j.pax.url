@@ -20,6 +20,11 @@ public class S3WagonConfigurator implements WagonConfigurator {
                 LOG.warn("no server configuration for S3 Wagon");
                 return;
             }
+            if (!(configuration instanceof Map<?, ?>)) {
+                LOG.warn("bad server configuration for S3 Wagon: " + configuration.getClass().getName());
+                return;
+            }
+            @SuppressWarnings("unchecked")
             Map<String, String> config = (Map<String, String>) configuration;
             if (config.isEmpty()) {
                 LOG.warn("empty server configuration for S3 Wagon");
