@@ -41,6 +41,7 @@
         <bundle.symbolicName>org.ops4j.pax.url.mvn</bundle.symbolicName>
         <bundle.namespace>org.ops4j.pax.url.mvn</bundle.namespace>
         <TEST_REPO>file:${project.build.directory}/remote-repo</TEST_REPO>
+        <tipaas.classifier>tipaas</tipaas.classifier>
     </properties>
 
     <dependencies>
@@ -275,7 +276,7 @@
     </dependencies>
 
     <build>
-        <finalName>${artifactId}-${version}-tipaas</finalName>
+        <finalName>${artifactId}-${version}-${tipaas.classifier}</finalName>
         <testResources>
             <testResource>
                 <directory>src/test/resources</directory>
