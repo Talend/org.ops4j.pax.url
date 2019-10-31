@@ -49,7 +49,7 @@ spec:
     parameters {
         booleanParam(name: 'SKIP_MAVEN_TEST', defaultValue: true, description: 'Pick to disable maven test')
         booleanParam(name: 'PUBLISH', defaultValue: false, description: 'Pick to publish to artifacts-zl.talend.com')
-        string(name: 'CLASSIFIER', defaultValue: 'tipaas', description: 'Jar classifier name')
+        string(name: 'CLASSIFIER', defaultValue: 'tipaasTest', description: 'Jar classifier name')
     }
 
     stages {
