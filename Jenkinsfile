@@ -49,6 +49,7 @@ spec:
     parameters {
         booleanParam(name: 'SKIP_MAVEN_TEST', defaultValue: true, description: 'Pick to disable maven test')
         booleanParam(name: 'PUBLISH', defaultValue: false, description: 'Pick to publish to artifacts-zl.talend.com')
+        string(name: 'CLASSIFIER', defaultValue: 'tipaas', description: 'Jar classifier name')
     }
 
     stages {
@@ -65,8 +66,8 @@ spec:
           steps {
             container('maven') {
               configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
-                sh "mvn -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} package -f pax-url-aether/pom.xml -s $MAVEN_SETTINGS"
-                archiveArtifacts artifacts: 'pax-url-aether/target/pax-url-aether-2.6.1-tipaas.jar', fingerprint: true, onlyIfSuccessful: true
+                sh "mvn -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} -Dtipaas.classifier=${params.CLASSIFIER} package -f pax-url-aether/pom.xml -s $MAVEN_SETTINGS"
+                archiveArtifacts artifacts: 'pax-url-aether/target/pax-url-aether-2.6.1-*.jar', fingerprint: true, onlyIfSuccessful: true
               }
             }
           }
@@ -77,7 +78,7 @@ spec:
           steps {
             container('maven') {
               configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
-                sh "mvn deploy:deploy-file -s $MAVEN_SETTINGS -DgeneratePom=true -DrepositoryId=thirdparty-releases -DgroupId=org.ops4j.pax.url -DartifactId=pax-url-aether -Dversion=2.6.1 -Dclassifier=tipaas -Dpackaging=jar -Durl=https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases -Dfile=pax-url-aether/target/pax-url-aether-2.6.1-tipaas.jar"
+                sh "mvn deploy:deploy-file -s $MAVEN_SETTINGS -DgeneratePom=true -DrepositoryId=thirdparty-releases -DgroupId=org.ops4j.pax.url -DartifactId=pax-url-aether -Dversion=2.6.1 -Dclassifier=${params.CLASSIFIER} -Dpackaging=jar -Durl=https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases -Dfile=pax-url-aether/target/pax-url-aether-2.6.1-${params.CLASSIFIER}.jar"
               }
             }
           }
