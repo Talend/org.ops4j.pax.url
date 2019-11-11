@@ -25,12 +25,16 @@ import org.apache.maven.wagon.providers.file.FileWagon;
 import org.eclipse.aether.transport.wagon.WagonProvider;
 import org.ops4j.pax.url.mvn.internal.wagon.ConfigurableHttpWagon;
 import org.ops4j.pax.url.mvn.s3.S3Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simplistic wagon provider
  */
 public class ManualWagonProvider implements WagonProvider
 {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ManualWagonProvider.class);
 
     private CloseableHttpClient client;
     private int readTimeout;
@@ -63,6 +67,7 @@ public class ManualWagonProvider implements WagonProvider
             S3StorageWagon s3Wagon = new S3StorageWagon() {
                 @Override
                 public void disconnect() throws ConnectionException {
+                    LOG.warn("disconnect call for S3StorageWagon with repository - " + this.repository);
                     super.disconnect();
                     this.repository = null;
                 }
