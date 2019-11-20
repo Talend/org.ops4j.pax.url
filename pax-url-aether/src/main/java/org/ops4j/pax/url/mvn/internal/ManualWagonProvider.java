@@ -67,7 +67,7 @@ public class ManualWagonProvider implements WagonProvider
             S3StorageWagon s3Wagon = new S3StorageWagon() {
                 @Override
                 public void disconnect() throws ConnectionException {
-                    LOG.warn("disconnect call for S3StorageWagon with repository - " + this.repository);
+                    LOG.debug("disconnect call for S3StorageWagon with repository - " + this.repository);
                     super.disconnect();
                     this.repository = null;
                 }
