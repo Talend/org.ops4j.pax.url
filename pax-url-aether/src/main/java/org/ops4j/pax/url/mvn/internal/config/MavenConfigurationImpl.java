@@ -346,7 +346,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
     }
 
     private void configureHTTPServer(String repositoryId, String userInfo) {
-        LOGGER.trace("trying to build server configuration for nexus repository" + repositoryId);
+        LOGGER.trace("trying to build server configuration for nexus repository " + repositoryId);
         Server server = settings.getServer(repositoryId);
         if (null == server) {
             server = new Server();
@@ -377,7 +377,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
 
     private void configureS3Server(MavenRepositoryURL mavenRepositoryURL) {
         final String repositoryId = mavenRepositoryURL.getId();
-        LOGGER.trace("trying to build server configuration for cloud repository" + repositoryId);
+        LOGGER.trace("trying to build server configuration for cloud repository " + repositoryId);
         Server server = settings.getServer(repositoryId);
         if (null == server) {
             final String propertyPrefix = S3Constants.SERVER_CONFIG_PROPERTY_PREFIX + "." + repositoryId + ".";
