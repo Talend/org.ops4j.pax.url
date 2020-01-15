@@ -46,6 +46,7 @@ import org.apache.maven.settings.building.SettingsBuildingException;
 import org.apache.maven.settings.building.SettingsBuildingRequest;
 import org.apache.maven.settings.building.SettingsBuildingResult;
 import org.ops4j.lang.NullArgumentException;
+import org.ops4j.net.URLUtils;
 import org.ops4j.pax.url.mvn.ServiceConstants;
 import org.ops4j.pax.url.mvn.s3.S3Constants;
 import org.ops4j.pax.url.mvn.s3.S3ServerConfigHelper;
@@ -320,9 +321,18 @@ public class MavenConfigurationImpl implements MavenConfiguration {
             if (repositoriesProp != null && repositoriesProp.trim().length() > 0) {
                 String[] repositories = repositoriesProp.split(REPOSITORIES_SEPARATOR_SPLIT);
                 for (String repositoryURL : repositories) {
-                    if (!"".equals(repositoryURL.trim())) {
-                        MavenRepositoryURL mavenRepositoryURL = new MavenRepositoryURL(repositoryURL.trim());
-                        if (S3Constants.PROTOCOL.equalsIgnoreCase(mavenRepositoryURL.getURL().getProtocol())) {
+                    final String repoURL = repositoryURL.trim();
+                    if (!"".equals(repoURL)) {
+                        MavenRepositoryURL mavenRepositoryURL = new MavenRepositoryURL(repoURL);
+                        final String protocol = mavenRepositoryURL.getURL().getProtocol();
+                        if ("http".equals(protocol) || "https".equals(protocol)) {
+                            final String userInfo = mavenRepositoryURL.getURL().getUserInfo();
+                            if (null != userInfo) {
+                                final String nonUserInfoRepoUrl = repoURL.replace(userInfo + "@", "");
+                                mavenRepositoryURL = new MavenRepositoryURL(nonUserInfoRepoUrl);
+                                configureHTTPServer(mavenRepositoryURL.getId(), userInfo);
+                            }
+                        } else if (S3Constants.PROTOCOL.equalsIgnoreCase(protocol)) {
                             configureS3Server(mavenRepositoryURL);
                         }
                         repositoriesProperty.add(mavenRepositoryURL);
@@ -335,9 +345,39 @@ public class MavenConfigurationImpl implements MavenConfiguration {
         return get(m_pid + ServiceConstants.PROPERTY_REPOSITORIES);
     }
 
+    private void configureHTTPServer(String repositoryId, String userInfo) {
+        LOGGER.trace("trying to build server configuration for nexus repository " + repositoryId);
+        Server server = settings.getServer(repositoryId);
+        if (null == server) {
+            server = new Server();
+            server.setId(repositoryId);
+
+            final String decodedUserInfo = URLUtils.decode(userInfo);
+            String username;
+            String password;
+            final int atColon = decodedUserInfo.indexOf(':');
+            if (atColon >= 0) {
+                username = decodedUserInfo.substring(0, atColon);
+                password = decodedUserInfo.substring(atColon + 1);
+            } else {
+                username = decodedUserInfo;
+                password = null;
+            }
+            server.setUsername(username);
+            server.setPassword(password);
+
+            settings.addServer(server);
+            LOGGER.info("server configuration was built for nexus repository " + repositoryId
+                    + " - username: " + ((null == username || username.isEmpty()) ? "<empty>" : username)
+                    + "; password: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****"));
+        } else {
+            LOGGER.warn("server configuration already exists for nexus repository " + repositoryId);
+        }
+    }
+
     private void configureS3Server(MavenRepositoryURL mavenRepositoryURL) {
         final String repositoryId = mavenRepositoryURL.getId();
-        LOGGER.trace("trying to build server configuration for cloud repository" + repositoryId);
+        LOGGER.trace("trying to build server configuration for cloud repository " + repositoryId);
         Server server = settings.getServer(repositoryId);
         if (null == server) {
             final String propertyPrefix = S3Constants.SERVER_CONFIG_PROPERTY_PREFIX + "." + repositoryId + ".";
