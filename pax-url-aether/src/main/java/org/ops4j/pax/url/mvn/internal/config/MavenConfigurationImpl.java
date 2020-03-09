@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.maven.settings.Mirror;
 import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Repository;
+import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.building.DefaultSettingsBuilder;
 import org.apache.maven.settings.building.DefaultSettingsBuilderFactory;
@@ -47,13 +48,15 @@ import org.apache.maven.settings.building.SettingsBuildingRequest;
 import org.apache.maven.settings.building.SettingsBuildingResult;
 import org.ops4j.lang.NullArgumentException;
 import org.ops4j.pax.url.mvn.ServiceConstants;
+import org.ops4j.pax.url.mvn.s3.S3Constants;
+import org.ops4j.pax.url.mvn.s3.S3ServerConfigHelper;
 import org.ops4j.util.property.PropertyResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Service Configuration implementation.
- * 
+ *
  * @author Alin Dreghiciu
  * @author Guillaume Nodet
  * @see MavenConfiguration
@@ -94,7 +97,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
 
     /**
      * Creates a new service configuration.
-     * 
+     *
      * @param propertyResolver
      *            propertyResolver used to resolve properties; mandatory
      * @param pid
@@ -148,7 +151,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
      * Returns the URL of settings file. Will try first to use the url as is. If a malformed url
      * encountered then will try to use the url as a file path. If still not valid will throw the
      * original Malformed URL exception.
-     * 
+     *
      * @see MavenConfiguration#getSettingsFileUrl()
      */
     public URL getSettingsFileUrl() {
@@ -219,7 +222,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
      * repositories will be used including configured user/password. In this case the central
      * repository is also added. Note that the local repository is added as the first repository if
      * exists.
-     * 
+     *
      * @see MavenConfiguration#getRepositories()
      * @see MavenConfiguration#getLocalRepository()
      */
@@ -256,7 +259,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
      * repositories will be used including configured user/password. In this case the central
      * repository is also added. Note that the local repository is added as the first repository if
      * exists.
-     * 
+     *
      * @see MavenConfiguration#getRepositories()
      * @see MavenConfiguration#getLocalRepository()
      */
@@ -319,7 +322,11 @@ public class MavenConfigurationImpl implements MavenConfiguration {
                 String[] repositories = repositoriesProp.split(REPOSITORIES_SEPARATOR_SPLIT);
                 for (String repositoryURL : repositories) {
                     if (!"".equals(repositoryURL.trim())) {
-                        repositoriesProperty.add(new MavenRepositoryURL(repositoryURL.trim()));
+                        MavenRepositoryURL mavenRepositoryURL = new MavenRepositoryURL(repositoryURL.trim());
+                        if (S3Constants.PROTOCOL.equalsIgnoreCase(mavenRepositoryURL.getURL().getProtocol())) {
+                            configureS3Server(mavenRepositoryURL);
+                        }
+                        repositoriesProperty.add(mavenRepositoryURL);
                     }
                 }
             }
@@ -327,6 +334,38 @@ public class MavenConfigurationImpl implements MavenConfiguration {
             return set(m_pid + ServiceConstants.PROPERTY_REPOSITORIES, repositoriesProperty);
         }
         return get(m_pid + ServiceConstants.PROPERTY_REPOSITORIES);
+    }
+
+    private void configureS3Server(MavenRepositoryURL mavenRepositoryURL) {
+        final String repositoryId = mavenRepositoryURL.getId();
+        LOGGER.trace("trying to build server configuration for cloud repository " + repositoryId);
+        Server server = settings.getServer(repositoryId);
+        if (null == server) {
+            final String propertyPrefix = S3Constants.SERVER_CONFIG_PROPERTY_PREFIX + "." + repositoryId + ".";
+            final String region = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_REGION);
+            if (null == region || region.trim().isEmpty()) {
+                LOGGER.warn("found NO configuration to build server for cloud repository " + repositoryId);
+                return;
+            }
+            server = new Server();
+            server.setId(repositoryId);
+
+            final String username = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ACCESS_KEY);
+            server.setUsername(username);
+            final String password = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_SECRET_KEY);
+            server.setPassword(password);
+
+            final String endpoint = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ENDPOINT);
+            server.setConfiguration(S3ServerConfigHelper.buildS3ServerConfiguration(region, endpoint));
+
+            settings.addServer(server);
+            LOGGER.info("server configuration was built for cloud repository " + repositoryId
+                    + " - access key: " + ((null == username || username.isEmpty()) ? "<empty>" : "***")
+                    + "; secret key: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****")
+                    + "; region: " + region + "; endpoint: " + endpoint);
+        } else {
+            LOGGER.warn("server configuration already exists for cloud repository " + repositoryId);
+        }
     }
 
     /**
@@ -390,7 +429,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
      * 3. looks in settings.xml (see settings.xml resolution);<br/>
      * 4. looks for system property {@code maven.repo.local} (PAXURL-231);<br/>
      * 5. falls back to ${user.home}/.m2/repository.
-     * 
+     *
      * @see MavenConfiguration#getLocalRepository()
      */
     public MavenRepositoryURL getLocalRepository() {
@@ -495,7 +534,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
 
     /**
      * Enables the proxy server for a given URL.
-     * 
+     *
      * @deprecated This method has side-effects and is only used in the "old" resolver.
      */
     @Deprecated

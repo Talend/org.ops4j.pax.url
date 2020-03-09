@@ -27,6 +27,8 @@ import org.ops4j.pax.url.mvn.MavenResolver;
 import org.ops4j.pax.url.mvn.ServiceConstants;
 import org.ops4j.pax.url.mvn.internal.config.MavenConfiguration;
 import org.ops4j.pax.url.mvn.internal.config.MavenConfigurationImpl;
+import org.ops4j.pax.url.mvn.s3.S3Constants;
+import org.ops4j.pax.url.mvn.s3.S3Handler;
 import org.ops4j.util.property.DictionaryPropertyResolver;
 import org.ops4j.util.property.PropertyResolver;
 import org.osgi.framework.BundleActivator;
@@ -89,6 +91,10 @@ public class Activator extends AbstractURLStreamHandlerService
         m_bundleContext = bundleContext;
         updated(null);
         registerManagedService();
+
+        Hashtable<String, Object> properties = new Hashtable<>();
+        properties.put(URLConstants.URL_HANDLER_PROTOCOL, new String[] { S3Constants.PROTOCOL });
+        m_bundleContext.registerService(URLStreamHandlerService.class.getName(), new S3Handler(), properties);
     }
 
     /**
