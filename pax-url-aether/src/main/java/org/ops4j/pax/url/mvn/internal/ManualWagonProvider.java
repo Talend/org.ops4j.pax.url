@@ -16,17 +16,25 @@
  */
 package org.ops4j.pax.url.mvn.internal;
 
+import com.gkatzioura.maven.cloud.s3.S3StorageWagon;
+
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.providers.file.FileWagon;
 import org.eclipse.aether.transport.wagon.WagonProvider;
 import org.ops4j.pax.url.mvn.internal.wagon.ConfigurableHttpWagon;
+import org.ops4j.pax.url.mvn.s3.S3Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simplistic wagon provider
  */
 public class ManualWagonProvider implements WagonProvider
 {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ManualWagonProvider.class);
 
     private CloseableHttpClient client;
     private int readTimeout;
@@ -54,6 +62,19 @@ public class ManualWagonProvider implements WagonProvider
         {
             return new ConfigurableHttpWagon( client, readTimeout, connectionTimeout);
         }
+        else if (S3Constants.PROTOCOL.equalsIgnoreCase(roleHint))
+        {
+            S3StorageWagon s3Wagon = new S3StorageWagon() {
+                @Override
+                public void disconnect() throws ConnectionException {
+                    LOG.debug("disconnect call for S3StorageWagon with repository - " + this.repository);
+                    super.disconnect();
+                    this.repository = null;
+                }
+            };
+            s3Wagon.setPathStyleAccessEnabled("true");
+            return s3Wagon;
+        }
 
         return null;
     }
@@ -61,4 +82,5 @@ public class ManualWagonProvider implements WagonProvider
     public void release( Wagon wagon )
     {
     }
+
 }
