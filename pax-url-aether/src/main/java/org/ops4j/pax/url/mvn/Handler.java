@@ -37,7 +37,15 @@ import org.ops4j.pax.url.mvn.internal.Connection;
 public class Handler
     extends URLStreamHandler
 {
+	private MavenResolver resolver;
 
+    public Handler() {
+
+    }
+
+    public Handler(MavenResolver resolver) {
+        this.resolver = resolver;
+    }
     /**
      * {@inheritDoc}
      */
@@ -45,7 +53,10 @@ public class Handler
     protected URLConnection openConnection( final URL url )
         throws IOException
     {
-        MavenResolver resolver = MavenResolvers.createMavenResolver(null, ServiceConstants.PID);
+    	MavenResolver resolver = this.resolver;
+        if (resolver == null) {
+            resolver = MavenResolvers.createMavenResolver(null, ServiceConstants.PID);
+        }
         return new Connection( url, resolver );
     }
 }
