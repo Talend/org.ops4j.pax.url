@@ -367,7 +367,9 @@ public class MavenConfigurationImpl implements MavenConfiguration {
             server.setUsername(username);
             server.setPassword(password);
 
-            settings.addServer(server);
+            synchronized (this) {
+                settings.addServer(server);
+            }
             LOGGER.info("server configuration was built for nexus repository " + repositoryId
                     + " - username: " + ((null == username || username.isEmpty()) ? "<empty>" : username)
                     + "; password: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****"));
