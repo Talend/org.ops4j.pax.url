@@ -306,7 +306,7 @@
     </dependencies>
 
     <build>
-        <finalName>${artifactId}-${version}-${tipaas.classifier}</finalName>
+        <finalName>${project.artifactId}-${project.version}-${tipaas.classifier}</finalName>
         <testResources>
             <testResource>
                 <directory>src/test/resources</directory>
