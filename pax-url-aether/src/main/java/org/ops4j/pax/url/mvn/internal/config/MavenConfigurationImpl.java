@@ -94,6 +94,8 @@ public class MavenConfigurationImpl implements MavenConfiguration {
      */
     private final PropertyResolver m_propertyResolver;
 
+    private final Object lock = new Object();
+
     private Settings settings;
 
     /**
@@ -334,7 +336,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
                                 configureHTTPServer(mavenRepositoryURL.getId(), userInfo);
                             }
                         } else if (S3Constants.PROTOCOL.equalsIgnoreCase(protocol)) {
-                            configureS3Server(mavenRepositoryURL);
+                            configureS3Server(mavenRepositoryURL.getId());
                         }
                         repositoriesProperty.add(mavenRepositoryURL);
                     }
@@ -347,66 +349,67 @@ public class MavenConfigurationImpl implements MavenConfiguration {
     }
 
     private void configureHTTPServer(String repositoryId, String userInfo) {
-        LOGGER.trace("trying to build server configuration for nexus repository " + repositoryId);
-        Server server = settings.getServer(repositoryId);
-        if (null == server) {
-            server = new Server();
-            server.setId(repositoryId);
+        synchronized (lock) {
+            LOGGER.trace("trying to build server configuration for nexus repository " + repositoryId);
+            Server server = settings.getServer(repositoryId);
+            if (null == server) {
+                server = new Server();
+                server.setId(repositoryId);
 
-            final String decodedUserInfo = URLUtils.decode(userInfo);
-            String username;
-            String password;
-            final int atColon = decodedUserInfo.indexOf(':');
-            if (atColon >= 0) {
-                username = decodedUserInfo.substring(0, atColon);
-                password = decodedUserInfo.substring(atColon + 1);
-            } else {
-                username = decodedUserInfo;
-                password = null;
-            }
-            server.setUsername(username);
-            server.setPassword(password);
+                final String decodedUserInfo = URLUtils.decode(userInfo);
+                String username;
+                String password;
+                final int atColon = decodedUserInfo.indexOf(':');
+                if (atColon >= 0) {
+                    username = decodedUserInfo.substring(0, atColon);
+                    password = decodedUserInfo.substring(atColon + 1);
+                } else {
+                    username = decodedUserInfo;
+                    password = null;
+                }
+                server.setUsername(username);
+                server.setPassword(password);
 
-            synchronized (this) {
                 settings.addServer(server);
+                LOGGER.info("server configuration was built for nexus repository " + repositoryId
+                        + " - username: " + ((null == username || username.isEmpty()) ? "<empty>" : username)
+                        + "; password: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****"));
+            } else {
+                LOGGER.info("server configuration already exists for nexus repository " + repositoryId);
             }
-            LOGGER.info("server configuration was built for nexus repository " + repositoryId
-                    + " - username: " + ((null == username || username.isEmpty()) ? "<empty>" : username)
-                    + "; password: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****"));
-        } else {
-            LOGGER.warn("server configuration already exists for nexus repository " + repositoryId);
         }
     }
 
-    private void configureS3Server(MavenRepositoryURL mavenRepositoryURL) {
-        final String repositoryId = mavenRepositoryURL.getId();
-        LOGGER.trace("trying to build server configuration for cloud repository " + repositoryId);
-        Server server = settings.getServer(repositoryId);
-        if (null == server) {
-            final String propertyPrefix = S3Constants.SERVER_CONFIG_PROPERTY_PREFIX + "." + repositoryId + ".";
-            final String region = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_REGION);
-            if (null == region || region.trim().isEmpty()) {
-                LOGGER.warn("found NO configuration to build server for cloud repository " + repositoryId);
-                return;
+    private void configureS3Server(String repositoryId) {
+        synchronized (lock) {
+            LOGGER.trace("trying to build server configuration for cloud repository " + repositoryId);
+            Server server = settings.getServer(repositoryId);
+            if (null == server) {
+                final String propertyPrefix = S3Constants.SERVER_CONFIG_PROPERTY_PREFIX + "." + repositoryId + ".";
+                final String region = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_REGION);
+                if (null == region || region.trim().isEmpty()) {
+                    LOGGER.warn("found NO configuration to build server for cloud repository " + repositoryId);
+                    return;
+                }
+                server = new Server();
+                server.setId(repositoryId);
+
+                final String username = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ACCESS_KEY);
+                server.setUsername(username);
+                final String password = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_SECRET_KEY);
+                server.setPassword(password);
+
+                final String endpoint = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ENDPOINT);
+                server.setConfiguration(S3ServerConfigHelper.buildS3ServerConfiguration(region, endpoint));
+
+                settings.addServer(server);
+                LOGGER.info("server configuration was built for cloud repository " + repositoryId
+                        + " - access key: " + ((null == username || username.isEmpty()) ? "<empty>" : "***")
+                        + "; secret key: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****")
+                        + "; region: " + region + "; endpoint: " + endpoint);
+            } else {
+                LOGGER.info("server configuration already exists for cloud repository " + repositoryId);
             }
-            server = new Server();
-            server.setId(repositoryId);
-
-            final String username = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ACCESS_KEY);
-            server.setUsername(username);
-            final String password = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_SECRET_KEY);
-            server.setPassword(password);
-
-            final String endpoint = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ENDPOINT);
-            server.setConfiguration(S3ServerConfigHelper.buildS3ServerConfiguration(region, endpoint));
-
-            settings.addServer(server);
-            LOGGER.info("server configuration was built for cloud repository " + repositoryId
-                    + " - access key: " + ((null == username || username.isEmpty()) ? "<empty>" : "***")
-                    + "; secret key: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****")
-                    + "; region: " + region + "; endpoint: " + endpoint);
-        } else {
-            LOGGER.warn("server configuration already exists for cloud repository " + repositoryId);
         }
     }
 
