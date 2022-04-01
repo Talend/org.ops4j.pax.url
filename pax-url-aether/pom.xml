@@ -26,13 +26,13 @@
     <parent>
         <groupId>org.ops4j.pax</groupId>
         <artifactId>url</artifactId>
-        <version>2.6.1</version>
+        <version>2.6.11</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>org.ops4j.pax.url</groupId>
     <artifactId>pax-url-aether</artifactId>
-    <version>2.6.2-Talend</version>
+    <version>2.6.3-Talend</version>
     <packaging>bundle</packaging>
 
     <name>OPS4J Pax Url - mvn:</name>
@@ -164,10 +164,16 @@
         <dependency>
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-sec-dispatcher</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.sonatype.plexus</groupId>
+                    <artifactId>plexus-cipher</artifactId>
+                </exclusion>
+            </exclusions>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.sonatype.plexus</groupId>
+            <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-cipher</artifactId>
             <optional>true</optional>
         </dependency>
@@ -191,6 +197,10 @@
             <artifactId>wagon-http</artifactId>
             <optional>true</optional>
             <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclients</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>
@@ -348,7 +358,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <environmentVariables>
-                        <NEXUS_ROOT>http://oss.sonatype.org</NEXUS_ROOT>
+                        <NEXUS_ROOT>https://oss.sonatype.org</NEXUS_ROOT>
                     </environmentVariables>
                     <systemPropertyVariables>
                         <jetty.http.port>${jetty.http.port}</jetty.http.port>
