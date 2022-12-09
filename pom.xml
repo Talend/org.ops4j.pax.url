@@ -479,11 +479,32 @@
             </plugin>
 
             <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dateFormat>yyyy-MM-dd'T'HH:mm:ss.SSSZ</dateFormat>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <configuration>
                     <obrRepository>NONE</obrRepository>
                     <instructions>
+                        <Build-Label>${git.build.number}</Build-Label>
+                        <Build-Revision>${git.commit.id}</Build-Revision>
+                        <Build-Timestamp>${git.build.time}</Build-Timestamp>
                         <Bundle-DocURL>${wiki.url}</Bundle-DocURL>
                         <_include>-osgi.bnd</_include>
                     </instructions>

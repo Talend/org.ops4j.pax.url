@@ -31,6 +31,7 @@ import org.osgi.framework.BundleContext;
 import static org.easymock.EasyMock.*;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
 
 public class RegistrationTest {
@@ -51,7 +52,7 @@ public class RegistrationTest {
         }).anyTimes();
 
         expect(context.registerService(same("org.osgi.service.url.URLStreamHandlerService"),
-                anyObject(), anyObject(Dictionary.class))).andReturn(null);
+                anyObject(), anyObject(Dictionary.class))).andReturn(null).times(2); // 2nd => S3-based repo URL handler
         expect(context.registerService(same("org.osgi.service.cm.ManagedService"),
                 anyObject(), anyObject(Dictionary.class))).andReturn(null);
         Capture<Dictionary<String, Object>> registrationProperties = new Capture<>();
@@ -86,6 +87,8 @@ public class RegistrationTest {
 
         expect(context.registerService(same("org.osgi.service.cm.ManagedService"),
                 anyObject(), anyObject(Dictionary.class))).andReturn(null);
+        expect(context.registerService(same("org.osgi.service.url.URLStreamHandlerService"),
+                anyObject(), anyObject(Dictionary.class))).andReturn(null); // S3-based repo URL handler
 
         replay(context);
 
@@ -152,8 +155,11 @@ public class RegistrationTest {
         activator.start(context);
         verify(context);
 
-        assertFalse("org.osgi.service.url.URLStreamHandlerService should not be registered",
-                urlStreamHandlerService.hasCaptured());
+        assertTrue("org.osgi.service.url.URLStreamHandlerService should be registered for S3",
+                urlStreamHandlerService.hasCaptured());  // S3-based repo URL handler
+        assertTrue(urlStreamHandlerService.getValue() instanceof org.ops4j.pax.url.mvn.s3.S3Handler);
+//        assertFalse("org.osgi.service.url.URLStreamHandlerService should not be registered",
+//                urlStreamHandlerService.hasCaptured());
         assertFalse("org.ops4j.pax.url.mvn.MavenResolver should not be registered",
                 mavenResolver.hasCaptured());
     }

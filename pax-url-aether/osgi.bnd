@@ -5,8 +5,8 @@ Bundle-Version:\
   ${pom.version}
 
 Bundle-SymbolicName:\
-  ${bundle.symbolicName}; singleton:=true  
-  
+  ${bundle.symbolicName}; singleton:=true
+
 Export-Service:\
   org.osgi.service.url.URLStreamHandlerService; url.handler.protocol=mvn, \
   org.ops4j.pax.url.mvn.MavenResolver
@@ -33,10 +33,20 @@ Import-Package:\
   !org.eclipse.sisu.*,\
   sun.misc; resolution:=optional,\
   sun.nio.ch; resolution:=optional,\
+  !org.apache.avalon.framework.logger,\
+  !org.apache.log,\
+  !org.apache.log4j,\
+  !org.apache.maven.plugin,\
+  !org.joda.convert,\
+  !com.amazonaws.*,\
+  !com.sun.org.apache.xpath.internal,\
+  !org.bouncycastle.jce.provider,\
+  !kotlin,\
   *
 
 Export-Package:\
-  ${bundle.namespace}; version="${pom.version}"
+  ${bundle.namespace}; version="${pom.version}",\
+  ${bundle.namespace}.s3; version="${pom.version}"
 
 Private-Package:\
   ${bundle.namespace}.internal.*,\
