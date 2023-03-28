@@ -326,7 +326,32 @@ public class AetherBasedResolver implements MavenResolver {
         if (m_settings.getProxies().size() == 0) {
             javaDefaultProxy(proxySelector);
         }
+
+        // prefer using maven settings
+        if (m_settings.getProxies().size() == 0) {
+            // support both https and http
+            getJavaProxy(proxySelector, SCHEMA_HTTPS);
+            getJavaProxy(proxySelector, SCHEMA_HTTP);
+        }
+
         return proxySelector;
+    }
+
+    private void getJavaProxy(DefaultProxySelector proxySelector, String schema) {
+        String proxyHost = System.getProperty(schema + '.' + PROXY_HOST);
+        if (proxyHost == null || proxyHost.isEmpty()) {
+            return;
+        }
+        int proxyPort =  Integer.parseInt(System.getProperty(schema + '.' + PROXY_PORT,"8080"));       
+
+        String proxyUser = System.getProperty(schema + '.' + PROXY_USER);
+        String proxyPassword = System.getProperty(schema + '.' + PROXY_PASSWORD);
+        Authentication authentication = createAuthentication(proxyUser, proxyPassword);
+
+        Proxy proxy = new Proxy(schema, proxyHost, proxyPort, authentication);
+        String nonProxyHosts = System.getProperty(schema + '.' + NON_PROXY_HOSTS);
+
+        proxySelector.add(proxy, nonProxyHosts);
     }
 
     private void javaDefaultProxy(DefaultProxySelector proxySelector) {
@@ -613,48 +638,50 @@ public class AetherBasedResolver implements MavenResolver {
                         Exception previousException) throws IOException {
 
         List<LocalRepository> defaultRepos = selectDefaultRepositories();
-        List<RemoteRepository> remoteRepos = selectRepositories();
-        if (repositoryURL != null) {
-            addRepo(remoteRepos, repositoryURL);
-        }
+        List<RemoteRepository> remoteRepos = Collections.EMPTY_LIST;
+        if (repositoryURL == null || !repositoryURL.useOnlyLocalRepositories()) {
+            remoteRepos = selectRepositories();
+            if (repositoryURL != null) {
+                addRepo(remoteRepos, repositoryURL);
+            }
 
-        // PAXURL-337: use previousException as hint to alter remote repositories to query
-        if (previousException != null) {
-            // we'll try using previous repositories, without these that will fail again anyway
-            List<RemoteRepository> altered = new LinkedList<>();
-            RepositoryException repositoryException = findAetherException(previousException);
-            if (repositoryException instanceof ArtifactResolutionException) {
-                // check only this aggregate exception and assume it's related to current artifact
-                ArtifactResult result = ((ArtifactResolutionException) repositoryException).getResult();
-                if (result != null && result.getRequest() != null && result.getRequest().getArtifact().equals(artifact)) {
-                    // one exception per repository checked
-                    // consider only ArtifactTransferException:
-                    //  - they may be recoverable
-                    //  - these exceptions contain repository that was checked
-                    for (Exception exception : result.getExceptions()) {
-                        RepositoryException singleException = findAetherException(exception);
-                        if (singleException instanceof ArtifactTransferException) {
-                            RemoteRepository repository = ((ArtifactTransferException) singleException).getRepository();
-                            if (repository != null) {
-                                RetryChance chance = isRetryableException(singleException);
-                                if (chance == RetryChance.NEVER) {
-                                    LOG.debug("Removing " + repository + " from list of repositories, previous exception: " +
-                                            singleException.getClass().getName() + ": " + singleException.getMessage());
-                                } else {
-                                    altered.add(repository);
+            // PAXURL-337: use previousException as hint to alter remote repositories to query
+            if (previousException != null) {
+                // we'll try using previous repositories, without these that will fail again anyway
+                List<RemoteRepository> altered = new LinkedList<>();
+                RepositoryException repositoryException = findAetherException(previousException);
+                if (repositoryException instanceof ArtifactResolutionException) {
+                    // check only this aggregate exception and assume it's related to current artifact
+                    ArtifactResult result = ((ArtifactResolutionException) repositoryException).getResult();
+                    if (result != null && result.getRequest() != null && result.getRequest().getArtifact().equals(artifact)) {
+                        // one exception per repository checked
+                        // consider only ArtifactTransferException:
+                        //  - they may be recoverable
+                        //  - these exceptions contain repository that was checked
+                        for (Exception exception : result.getExceptions()) {
+                            RepositoryException singleException = findAetherException(exception);
+                            if (singleException instanceof ArtifactTransferException) {
+                                RemoteRepository repository = ((ArtifactTransferException) singleException).getRepository();
+                                if (repository != null) {
+                                    RetryChance chance = isRetryableException(singleException);
+                                    if (chance == RetryChance.NEVER) {
+                                        LOG.debug("Removing " + repository + " from list of repositories, previous exception: " +
+                                                singleException.getClass().getName() + ": " + singleException.getMessage());
+                                    } else {
+                                        altered.add(repository);
+                                    }
                                 }
                             }
                         }
+                        
+                        // swap list of repos now
+                        remoteRepos = altered;
                     }
-
-                    // swap list of repos now
-                    remoteRepos = altered;
                 }
             }
-        }
-
-        assignProxyAndMirrors(remoteRepos);
-        File resolved = resolve(defaultRepos, remoteRepos, artifact);
+            assignProxyAndMirrors(remoteRepos);
+        }//else not url specified or only local onces so keep going
+        File resolved = resolve( defaultRepos, remoteRepos, artifact );
 
         LOG.debug("Resolved ({}) as {}", artifact.toString(), resolved.getAbsolutePath());
         return resolved;

@@ -39,6 +39,11 @@ public interface ServiceConstants
     String PROTOCOL = "mvn";
 
     /**
+     * The protocol name used to only resolve on local repositories.
+     */
+    String LOCAL_REPO_PROTOCOL = "localrepositories";
+
+    /**
      * If this environmental variable is specified, the value will be used as global Maven mirror (for all repositories)
      */
     String PROPERTY_MAVEN_MIRROR_URL_ENV = "MAVEN_MIRROR_URL";
