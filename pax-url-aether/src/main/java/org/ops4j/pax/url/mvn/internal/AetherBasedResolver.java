@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1107,7 +1108,7 @@ public class AetherBasedResolver implements MavenResolver {
         if (repo == null) {
             repo = getLocalRepository();
         }
-	LocalRepository sessionKey = new LocalRepository(repo.getBasedir(), "pax-url");
+	    LocalRepository sessionKey = new LocalRepository(repo.getBasedir(), "pax-url");
         Deque<RepositorySystemSession> deque = sessions.get(sessionKey);
         RepositorySystemSession session = null;
         if (deque != null) {
