@@ -560,7 +560,7 @@ public class AetherBasedResolver implements MavenResolver {
 
     private void addLocalRepo(List<LocalRepository> list, MavenRepositoryURL repo) {
         if (repo.getFile() != null) {
-            LocalRepository local = new LocalRepository(repo.getFile(), "pax-url");
+            LocalRepository local = new LocalRepository(repo.getFile(), "simple");
             list.add(local);
         }
     }
@@ -1107,7 +1107,8 @@ public class AetherBasedResolver implements MavenResolver {
         if (repo == null) {
             repo = getLocalRepository();
         }
-        Deque<RepositorySystemSession> deque = sessions.get(repo);
+	LocalRepository sessionKey = new LocalRepository(repo.getBasedir(), "pax-url");
+        Deque<RepositorySystemSession> deque = sessions.get(sessionKey);
         RepositorySystemSession session = null;
         if (deque != null) {
             session = deque.pollFirst();
@@ -1193,7 +1194,7 @@ public class AetherBasedResolver implements MavenResolver {
             } else {
                 local = new File(System.getProperty("user.home"), ".m2/repository");
             }
-            localRepository = new LocalRepository(local, "pax-url");
+            localRepository = new LocalRepository(local, "simple");
         }
         return localRepository;
     }
