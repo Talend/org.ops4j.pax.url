@@ -1125,7 +1125,7 @@ public class AetherBasedResolver implements MavenResolver {
     private static final String SESSION_CHECKS = "updateCheckManager.checks";
 
     private void releaseSession(RepositorySystemSession session) {
-        if (session.getUpdatePolicy() == RepositoryPolicy.UPDATE_POLICY_NEVER) {
+        if (Objects.equals(session.getUpdatePolicy(), RepositoryPolicy.UPDATE_POLICY_NEVER)) {
             LocalRepository repo = session.getLocalRepository();
             Deque<RepositorySystemSession> deque = sessions.get(repo);
             if (deque == null) {
