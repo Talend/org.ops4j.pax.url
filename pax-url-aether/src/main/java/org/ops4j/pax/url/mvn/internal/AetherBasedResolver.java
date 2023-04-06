@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1107,7 +1108,8 @@ public class AetherBasedResolver implements MavenResolver {
         if (repo == null) {
             repo = getLocalRepository();
         }
-        Deque<RepositorySystemSession> deque = sessions.get(repo);
+	    LocalRepository sessionKey = new LocalRepository(repo.getBasedir(), "pax-url");
+        Deque<RepositorySystemSession> deque = sessions.get(sessionKey);
         RepositorySystemSession session = null;
         if (deque != null) {
             session = deque.pollFirst();
@@ -1124,14 +1126,16 @@ public class AetherBasedResolver implements MavenResolver {
     private static final String SESSION_CHECKS = "updateCheckManager.checks";
 
     private void releaseSession(RepositorySystemSession session) {
-        LocalRepository repo = session.getLocalRepository();
-        Deque<RepositorySystemSession> deque = sessions.get(repo);
-        if (deque == null) {
-            sessions.putIfAbsent(repo, new ConcurrentLinkedDeque<RepositorySystemSession>());
-            deque = sessions.get(repo);
+        if (Objects.equals(session.getUpdatePolicy(), RepositoryPolicy.UPDATE_POLICY_NEVER)) {
+            LocalRepository repo = session.getLocalRepository();
+            Deque<RepositorySystemSession> deque = sessions.get(repo);
+            if (deque == null) {
+                sessions.putIfAbsent(repo, new ConcurrentLinkedDeque<RepositorySystemSession>());
+                deque = sessions.get(repo);
+            }
+            session.getData().set(SESSION_CHECKS, null);
+            deque.add(session);
         }
-        session.getData().set(SESSION_CHECKS, null);
-        deque.add(session);
     }
 
     private RepositorySystemSession createSession(LocalRepository repo) {
