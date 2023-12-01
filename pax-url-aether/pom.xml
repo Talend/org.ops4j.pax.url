@@ -32,7 +32,7 @@
 
     <groupId>org.ops4j.pax.url</groupId>
     <artifactId>pax-url-aether</artifactId>
-    <version>2.6.13-Talend</version>
+    <version>2.6.13-Talend_v${git.commit.timestamp}</version>
     <packaging>bundle</packaging>
 
     <name>OPS4J Pax Url - mvn:</name>
@@ -391,6 +391,22 @@
                             <portNames>
                                 <portName>jetty.http.port</portName>
                             </portNames>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>timestamp-property</id>
+                        <goals>
+                            <goal>timestamp-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>git.commit.timestamp</name>
+                            <pattern>yyyyMMdd-HHmm</pattern>
                         </configuration>
                     </execution>
                 </executions>
