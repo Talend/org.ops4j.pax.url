@@ -30,7 +30,7 @@ public class S3WagonConfigurator implements WagonConfigurator {
                 LOG.warn("empty server configuration for S3 Wagon");
                 return;
             }
-            LOG.info("using S3 Wagon configuration " + config);
+            LOG.debug("using S3 Wagon configuration " + config);
 
             S3StorageWagon s3Wagon = (S3StorageWagon) wagon;
             s3Wagon.setRegion(config.get(S3Constants.PROPERTY_REGION));
