@@ -408,7 +408,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
                         + "; secret key: " + ((null == password || password.isEmpty()) ? "<empty>" : "*****")
                         + "; region: " + region + "; endpoint: " + endpoint);
             } else {
-                LOGGER.info("server configuration already exists for cloud repository " + repositoryId);
+                LOGGER.debug("server configuration already exists for cloud repository " + repositoryId);
             }
         }
     }
