@@ -3,7 +3,7 @@
 // The job packages osp4j_2.6.14 with Talend's patch
 // https://github.com/Talend/org.ops4j.pax.url/tree/url-2.6.14-tipaas
 
-def slackChannel = 'tic-notifications'
+def slackChannel = 'tmc-team-gen1-run'
 def decodedJobName = env.JOB_NAME.replaceAll("%2F", "/")
 
 pipeline {
@@ -11,43 +11,40 @@ pipeline {
     agent {
         kubernetes {
             label 'osp4j-build'
+            defaultContainer "default-container"
             yaml """
 apiVersion: v1
 kind: Pod
 spec:
+  imagePullSecrets:
+    - name: talend-registry
   containers:
-    - name: maven
-      image: jenkinsxio/builder-maven:0.1.273
+    - name: default-container
+      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.19-20240830144925
       command:
-      - cat
+        - cat
       tty: true
       resources:
-          requests:
-            memory: "5120Mi"
-            cpu: "2.0"
-          limits:
-            memory: "5120Mi"
-            cpu: "2.0"
-      volumeMounts:
-      - name: docker
-        mountPath: /var/run/docker.sock
-  volumes:
-  - name: docker
-    hostPath:
-      path: /var/run/docker.sock
-  """
+        requests:
+          memory: "2048Mi"
+          cpu: "1.0"
+        limits:
+          memory: "2048Mi"
+          cpu: "1.0"
+"""
         }
     }
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '5'))
-        timeout(time: 120, unit: 'MINUTES')
+        timeout(time: 30, unit: 'MINUTES')
         skipStagesAfterUnstable()
         disableConcurrentBuilds()
+        ansiColor("xterm")
     }
 
     parameters {
-        booleanParam(name: 'SKIP_MAVEN_TEST', defaultValue: true, description: 'Pick to disable maven test')
+        booleanParam(name: 'SKIP_MAVEN_TEST', defaultValue: false, description: 'Pick to disable maven test')
         booleanParam(name: 'PUBLISH', defaultValue: false, description: 'Pick to publish to artifacts-zl.talend.com')
         string(name: 'CLASSIFIER', defaultValue: 'tipaasTest', description: 'Jar classifier name')
     }
@@ -55,33 +52,29 @@ spec:
     stages {
 
         stage('Maven clean') {
-          steps {
-            container('maven') {
-              sh "mvn clean"
+            steps {
+                sh "mvn --no-transfer-progress clean"
             }
-          }
         }
 
         stage('Maven package') {
-          steps {
-            container('maven') {
-              configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
-                sh "mvn -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} -Dtipaas.classifier=${params.CLASSIFIER} package -f pax-url-aether/pom.xml -s $MAVEN_SETTINGS"
-                archiveArtifacts artifacts: 'pax-url-aether/target/pax-url-aether-2.6.14-*.jar', fingerprint: true, onlyIfSuccessful: true
-              }
+            steps {
+                configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
+                    sh "mvn --no-transfer-progress -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} -Dtipaas.classifier=${params.CLASSIFIER} package -f pax-url-aether/pom.xml -s $MAVEN_SETTINGS"
+                    archiveArtifacts artifacts: 'pax-url-aether/target/pax-url-aether-2.6.14-*.jar', fingerprint: true, onlyIfSuccessful: true
+                }
             }
-          }
         }
 
         stage('Publlish to Nexus') {
-          when { expression { params.PUBLISH } }
-          steps {
-            container('maven') {
-              configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
-                sh "mvn deploy:deploy-file -s $MAVEN_SETTINGS -DgeneratePom=true -DrepositoryId=thirdparty-releases -DgroupId=org.ops4j.pax.url -DartifactId=pax-url-aether -Dversion=2.6.14 -Dclassifier=${params.CLASSIFIER} -Dpackaging=jar -Durl=https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases -Dfile=pax-url-aether/target/pax-url-aether-2.6.14-${params.CLASSIFIER}.jar"
-              }
+            when {
+                expression { params.PUBLISH }
             }
-          }
+            steps {
+                configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
+                    sh "mvn --no-transfer-progress deploy:deploy-file -s $MAVEN_SETTINGS -DgeneratePom=true -DrepositoryId=thirdparty-releases -DgroupId=org.ops4j.pax.url -DartifactId=pax-url-aether -Dversion=2.6.14 -Dclassifier=${params.CLASSIFIER} -Dpackaging=jar -Durl=https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases -Dfile=pax-url-aether/target/pax-url-aether-2.6.14-${params.CLASSIFIER}.jar"
+                }
+            }
         }
     }
 
