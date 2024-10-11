@@ -20,7 +20,7 @@ spec:
     - name: talend-registry
   containers:
     - name: default-container
-      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.19-20240830144925
+      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.23-20241009112836
       command:
         - cat
       tty: true
@@ -66,9 +66,9 @@ spec:
             }
         }
 
-        stage('Publlish to Nexus') {
+        stage('Publish to Nexus') {
             when {
-                expression { params.PUBLISH }
+                expression { return params.PUBLISH }
             }
             steps {
                 configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
