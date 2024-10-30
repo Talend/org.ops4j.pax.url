@@ -42,6 +42,7 @@ Import-Package:\
   !com.sun.org.apache.xpath.internal,\
   !org.bouncycastle.jce.provider,\
   !kotlin,\
+  !com.ibm.icu.text,\
   *
 
 Export-Package:\

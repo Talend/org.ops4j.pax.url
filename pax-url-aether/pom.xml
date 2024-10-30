@@ -276,6 +276,17 @@
             <version>2.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.servicemix.bundles</groupId>
+            <artifactId>org.apache.servicemix.bundles.jasypt</artifactId>
+            <version>1.9.3_1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+
         <!-- Test dependencies -->
 
         <dependency>
@@ -392,6 +403,9 @@
                                         <include>com.gkatzioura.maven.cloud.**</include>
                                         <include>software.amazon.ion.**</include>
                                         <include>org.joda.time.**</include>
+
+                                        <include>org.bouncycastle.**</include>
+                                        <include>org.jasypt.**</include>
                                     </includes>
                                 </relocation>
                             </relocations>
@@ -401,6 +415,7 @@
                                     <excludes>
                                         <exclude>META-INF/versions/**</exclude>
                                         <exclude>META-INF/services/com.fasterxml.jackson.*</exclude>
+                                        <exclude>META-INF/services/java.security.Provider</exclude>
                                         <exclude>META-INF/services/org.apache.commons.logging.LogFactory</exclude>
                                         <exclude>org/apache/commons/codec/language/**</exclude>
                                         <exclude>org/apache/commons/lang3/arch/**</exclude>
