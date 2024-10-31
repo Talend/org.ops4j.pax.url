@@ -49,6 +49,7 @@ import org.apache.maven.settings.building.SettingsBuildingResult;
 import org.ops4j.lang.NullArgumentException;
 import org.ops4j.net.URLUtils;
 import org.ops4j.pax.url.mvn.ServiceConstants;
+import org.ops4j.pax.url.mvn.s3.CredentialsDecryptor;
 import org.ops4j.pax.url.mvn.s3.S3Constants;
 import org.ops4j.pax.url.mvn.s3.S3ServerConfigHelper;
 import org.ops4j.util.property.PropertyResolver;
@@ -98,6 +99,8 @@ public class MavenConfigurationImpl implements MavenConfiguration {
 
     private Settings settings;
 
+    private CredentialsDecryptor s3CredentialsDecryptor;
+
     /**
      * Creates a new service configuration.
      *
@@ -113,6 +116,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
         m_propertyResolver = propertyResolver;
         settings = buildSettings(getLocalRepoPath(propertyResolver), getSettingsFileUrl(),
             useFallbackRepositories());
+        s3CredentialsDecryptor = new CredentialsDecryptor();
     }
 
     @Override
@@ -396,7 +400,8 @@ public class MavenConfigurationImpl implements MavenConfiguration {
 
                 final String username = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ACCESS_KEY);
                 server.setUsername(username);
-                final String password = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_SECRET_KEY);
+                String password = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_SECRET_KEY);
+                password = s3CredentialsDecryptor.decrypt(propertyPrefix + S3Constants.PROPERTY_SECRET_KEY, password);
                 server.setPassword(password);
 
                 final String endpoint = m_propertyResolver.get(propertyPrefix + S3Constants.PROPERTY_ENDPOINT);
