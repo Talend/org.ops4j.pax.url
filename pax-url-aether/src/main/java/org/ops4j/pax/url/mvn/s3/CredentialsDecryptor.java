@@ -4,6 +4,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.EnvironmentStringPBEConfig;
+import org.jasypt.iv.RandomIvGenerator;
 import org.jasypt.properties.PropertyValueEncryptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +13,7 @@ public class CredentialsDecryptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(CredentialsDecryptor.class);
 
-    private static final String PASSWORD_ENV_VAR = "TMC_ENGINE_PASSWORD";
+    private static final String PASSWORD_ENV_VAR = "TMC_ENGINE_CONFIG_ENCRYPT_PASSWORD";
 
     private StringEncryptor encryptor;
 
@@ -24,6 +25,7 @@ public class CredentialsDecryptor {
         try {
             EnvironmentStringPBEConfig env = new EnvironmentStringPBEConfig();
             env.setProvider(new BouncyCastleProvider());
+            env.setIvGenerator(new RandomIvGenerator());
             env.setAlgorithm("PBEWITHSHA256AND256BITAES-CBC-BC");
             env.setPasswordEnvName(PASSWORD_ENV_VAR);
 
@@ -35,15 +37,15 @@ public class CredentialsDecryptor {
         }
     }
 
-    public String decrypt(String name, String value) {
-        if (null != encryptor) {
+    public String decrypt(String paramName, String paramValue) {
+        if (null != encryptor && null != paramValue && PropertyValueEncryptionUtils.isEncryptedValue(paramValue)) {
             try {
-                return PropertyValueEncryptionUtils.decrypt(value, encryptor);
+                return PropertyValueEncryptionUtils.decrypt(paramValue, encryptor);
             } catch (Exception e) {
-                LOG.error("cannot decrypt sensitive engine configuration value for {}", name);
+                LOG.error("cannot decrypt sensitive engine configuration value for {}", paramName);
             }
         }
-        return value;
+        return paramValue;
     }
 
 }
