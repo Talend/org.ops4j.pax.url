@@ -1,9 +1,9 @@
 #!/usr/bin/env groovy
 
-// The job packages osp4j_2.6.14 with Talend's patch
-// https://github.com/Talend/org.ops4j.pax.url/tree/url-2.6.14-tipaas
+// The job packages osp4j_2.6.16 with Talend's patch
+// https://github.com/Talend/org.ops4j.pax.url/tree/url-2.6.16-tipaas
 
-def slackChannel = 'tmc-team-gen1-run'
+def slackChannel = 'tic-notifications'
 def decodedJobName = env.JOB_NAME.replaceAll("%2F", "/")
 
 pipeline {
@@ -20,7 +20,7 @@ spec:
     - name: talend-registry
   containers:
     - name: default-container
-      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.23-20241009112836
+      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.30-20250115110052
       command:
         - cat
       tty: true
@@ -61,7 +61,7 @@ spec:
             steps {
                 configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
                     sh "mvn --no-transfer-progress -Dmaven.test.skip=${params.SKIP_MAVEN_TEST} -Dtipaas.classifier=${params.CLASSIFIER} package -f pax-url-aether/pom.xml -s $MAVEN_SETTINGS"
-                    archiveArtifacts artifacts: 'pax-url-aether/target/pax-url-aether-2.6.14-*.jar', fingerprint: true, onlyIfSuccessful: true
+                    archiveArtifacts artifacts: 'pax-url-aether/target/pax-url-aether-2.6.16-*.jar', fingerprint: true, onlyIfSuccessful: true
                 }
             }
         }
@@ -72,7 +72,7 @@ spec:
             }
             steps {
                 configFileProvider([configFile(fileId: 'maven-settings-nexus-zl', variable: 'MAVEN_SETTINGS')]) {
-                    sh "mvn --no-transfer-progress deploy:deploy-file -s $MAVEN_SETTINGS -DgeneratePom=true -DrepositoryId=thirdparty-releases -DgroupId=org.ops4j.pax.url -DartifactId=pax-url-aether -Dversion=2.6.14 -Dclassifier=${params.CLASSIFIER} -Dpackaging=jar -Durl=https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases -Dfile=pax-url-aether/target/pax-url-aether-2.6.14-${params.CLASSIFIER}.jar"
+                    sh "mvn --no-transfer-progress deploy:deploy-file -s $MAVEN_SETTINGS -DgeneratePom=true -DrepositoryId=thirdparty-releases -DgroupId=org.ops4j.pax.url -DartifactId=pax-url-aether -Dversion=2.6.16 -Dclassifier=${params.CLASSIFIER} -Dpackaging=jar -Durl=https://artifacts-zl.talend.com/nexus/content/repositories/thirdparty-releases -Dfile=pax-url-aether/target/pax-url-aether-2.6.16-${params.CLASSIFIER}.jar"
                 }
             }
         }
