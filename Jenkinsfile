@@ -3,7 +3,7 @@
 // The job packages osp4j_2.6.16 with Talend's patch
 // https://github.com/Talend/org.ops4j.pax.url/tree/url-2.6.16-tipaas
 
-def slackChannel = 'tic-notifications'
+def slackChannel = 'tmc-engine-build-notification'
 def decodedJobName = env.JOB_NAME.replaceAll("%2F", "/")
 
 pipeline {
