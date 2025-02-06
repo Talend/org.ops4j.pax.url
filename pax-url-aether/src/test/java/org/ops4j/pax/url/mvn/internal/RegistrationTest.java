@@ -158,8 +158,6 @@ public class RegistrationTest {
         assertTrue("org.osgi.service.url.URLStreamHandlerService should be registered for S3",
                 urlStreamHandlerService.hasCaptured());  // S3-based repo URL handler
         assertTrue(urlStreamHandlerService.getValue() instanceof org.ops4j.pax.url.mvn.s3.S3Handler);
-//        assertFalse("org.osgi.service.url.URLStreamHandlerService should not be registered",
-//                urlStreamHandlerService.hasCaptured());
         assertFalse("org.ops4j.pax.url.mvn.MavenResolver should not be registered",
                 mavenResolver.hasCaptured());
     }
