@@ -3,7 +3,7 @@
 // The job packages osp4j_2.6.16 with Talend's patch
 // https://github.com/Talend/org.ops4j.pax.url/tree/url-2.6.16-tipaas
 
-def slackChannel = 'tmc-engine-build-notification'
+def slackChannel = '#tmc-engine-builds-notifications'
 def decodedJobName = env.JOB_NAME.replaceAll("%2F", "/")
 
 pipeline {
@@ -20,7 +20,7 @@ spec:
     - name: talend-registry
   containers:
     - name: default-container
-      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.30-20250115110052
+      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.33-20250522154914
       command:
         - cat
       tty: true
