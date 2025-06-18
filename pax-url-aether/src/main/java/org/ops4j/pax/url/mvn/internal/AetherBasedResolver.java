@@ -93,6 +93,7 @@ import org.eclipse.aether.transfer.ArtifactNotFoundException;
 import org.eclipse.aether.transfer.ArtifactTransferException;
 import org.eclipse.aether.transfer.MetadataNotFoundException;
 import org.eclipse.aether.transfer.MetadataTransferException;
+import org.eclipse.aether.transport.wagon.WagonConfigurator;
 import org.eclipse.aether.transport.wagon.WagonProvider;
 import org.eclipse.aether.transport.wagon.WagonTransporterFactory;
 import org.eclipse.aether.util.repository.AuthenticationBuilder;
@@ -108,6 +109,9 @@ import org.ops4j.pax.url.mvn.MirrorInfo;
 import org.ops4j.pax.url.mvn.ServiceConstants;
 import org.ops4j.pax.url.mvn.internal.config.MavenConfiguration;
 import org.ops4j.pax.url.mvn.internal.config.MavenRepositoryURL;
+import org.ops4j.pax.url.mvn.s3.S3Constants;
+import org.ops4j.pax.url.mvn.s3.S3ServerConfigHelper;
+import org.ops4j.pax.url.mvn.s3.S3WagonConfigurator;
 import org.slf4j.LoggerFactory;
 import org.sonatype.plexus.components.cipher.DefaultPlexusCipher;
 import org.sonatype.plexus.components.cipher.PlexusCipherException;
@@ -1135,6 +1139,8 @@ public class AetherBasedResolver implements MavenResolver {
             if (server.getConfiguration() != null
                     && ((Xpp3Dom) server.getConfiguration()).getChild("httpHeaders") != null) {
                 addServerConfig(session, server);
+            } else {
+                tryToAddS3ServerConfig(session, server);
             }
         }
 
@@ -1187,6 +1193,14 @@ public class AetherBasedResolver implements MavenResolver {
         session.setConfigProperty(String.format("%s.%s", ConfigurationProperties.HTTP_HEADERS, server.getId()), headers);
     }
 
+    private void tryToAddS3ServerConfig(DefaultRepositorySystemSession session, Server server) {
+        Xpp3Dom configuration = (Xpp3Dom) server.getConfiguration();
+        if (null != configuration && null != configuration.getChild(S3Constants.PROPERTY_REGION)) {
+            Map<String, String> config = S3ServerConfigHelper.getS3ServerConfiguration(configuration);
+            session.setConfigProperty(String.format("%s.%s", "aether.connector.wagon.config", server.getId()), config);
+        }
+    }
+
     private Authentication getAuthentication(org.apache.maven.settings.Proxy proxy) {
         // user, pass
         if (proxy.getUsername() != null) {
@@ -1216,6 +1230,7 @@ public class AetherBasedResolver implements MavenResolver {
         // read timeout
         int soTimeout = m_config.getProperty(ServiceConstants.PROPERTY_SOCKET_SO_TIMEOUT, defaultTimeout, Integer.class);
         locator.setServices(WagonProvider.class, new ManualWagonProvider(m_client, soTimeout, connectionTimeout));
+        locator.addService(WagonConfigurator.class, S3WagonConfigurator.class);
         locator.addService(TransporterFactory.class, WagonTransporterFactory.class);
         locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
 
