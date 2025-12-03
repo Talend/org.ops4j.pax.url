@@ -20,7 +20,7 @@ spec:
     - name: talend-registry
   containers:
     - name: default-container
-      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.33-20250522154914
+      image: artifactory.datapwn.com/tlnd-docker-dev/talend/common/tsbi/jdk8-builder-base:4.0.41-20251113144154
       command:
         - cat
       tty: true
