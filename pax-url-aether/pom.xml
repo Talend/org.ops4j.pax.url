@@ -195,7 +195,6 @@
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.wagon</groupId>
