@@ -37,7 +37,10 @@ Import-Package:\
   *
 
 Export-Package:\
-  ${bundle.namespace}; version="${pom.version}"
+  ${bundle.namespace}; version="${upstream.version}"
+
+DynamicImport-Package:\
+  org.talend.cxf.crypto.config;version="[8,9)"
 
 Private-Package:\
   ${bundle.namespace}.internal.*,\

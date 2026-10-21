@@ -89,6 +89,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.certificateCheck" ) ).andReturn( "true" );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Certificate check", true, config.getCertificateCheck() );
@@ -103,6 +104,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.certificateCheck" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Certificate check", false, config.getCertificateCheck() );
@@ -119,6 +121,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn(
             "file:somewhere/settings.xml"
         );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Settings", new URL( "file:somewhere/settings.xml" ), config.getSettingsFileUrl() );
@@ -136,6 +139,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn(
             validSettings.getAbsolutePath()
         );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Settings", validSettings.toURI().toURL(), config.getSettingsFileUrl() );
@@ -155,6 +159,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( "noprotocol:settings.xml" );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         new MavenConfigurationImpl( propertyResolver, PID ).getSettingsFileUrl();
     }
@@ -170,6 +175,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         URL settings = config.getSettingsFileUrl();
@@ -186,6 +192,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( "file:/user/home/.m2/repository" ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         MavenRepositoryURL localRepo = config.getLocalRepository();
@@ -203,6 +210,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( "file:repository1/@id=repository1" );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -222,6 +230,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( "file:repository1@id=repository1" );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -241,6 +250,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( "file:repository1/@id=repository1" );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -260,6 +270,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( "file:repository1\\@id=repository1" );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -281,6 +292,7 @@ public class ConfigurationImplTest
             "http:repository1@snapshots@noreleases@id=repository1"
         );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -301,6 +313,7 @@ public class ConfigurationImplTest
             "http:repository1@snapshots@id=repository1"
         );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -321,6 +334,7 @@ public class ConfigurationImplTest
             "http:repository1@noreleases@id=repository1"
         );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -341,6 +355,7 @@ public class ConfigurationImplTest
             "file:repository1/@id=repository1,file:repository2/@id=repository2"
         );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -363,6 +378,7 @@ public class ConfigurationImplTest
             "file:repository1/@id=repository1 , file:repository2/@id=repository2, "
         );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -383,6 +399,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         Settings settings = settingsForRepository( "repository1", "file:repository1" );
         replay( propertyResolver );
         MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
@@ -418,6 +435,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( "+file:repository1/@id=repository1" );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         Settings settings = settingsForRepository( "repository2", "file:repository2" );
         replay( propertyResolver );
         MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
@@ -442,6 +460,7 @@ public class ConfigurationImplTest
             "file:localRepository/"
         ).atLeastOnce();
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();
@@ -463,6 +482,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn(
             "file:somewhere/localrepository/"
         ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Local repository",
@@ -482,6 +502,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn(
             "file:somewhere/localrepository"
         ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Local repository",
@@ -501,6 +522,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn(
             "file:somewhere/localrepository\\"
         ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Local repository",
@@ -521,6 +543,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn(
             valid.getAbsolutePath()
         ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Local repository",
@@ -542,6 +565,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn(
             valid.getAbsolutePath()
         ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Local repository",
@@ -566,6 +590,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn(
             "noprotocol://localrepository"
         ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         new MavenConfigurationImpl( propertyResolver, PID ).getLocalRepository();
     }
@@ -585,6 +610,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn(
             "c:/this/should/be/an/inexistent/directory"
         ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         new MavenConfigurationImpl( propertyResolver, PID ).getLocalRepository();
     }
@@ -597,6 +623,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null ).atLeastOnce();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         MavenRepositoryURL localRepo = config.getLocalRepository();
@@ -648,6 +675,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null ).atLeastOnce();
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         Settings settings = buildSettings("src/test/resources/settings/settingsWithLocalRepository.xml");
         replay( propertyResolver );
         MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
@@ -669,6 +697,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( "false" );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( null ).anyTimes();
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null ).anyTimes();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         Settings settings = buildSettings("src/test/resources/settings/settingsWithRepositories.xml");
         replay( propertyResolver );
         MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
@@ -687,6 +716,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( "false" );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.repositories" ) ).andReturn( null ).anyTimes();
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.defaultLocalRepoAsRemote" ) ).andReturn( null ).anyTimes();
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         Settings settings = buildSettings("src/test/resources/settings/settingsWithActiveProfiles.xml");
         replay( propertyResolver );
         MavenConfigurationImpl config = new MavenConfigurationImpl( propertyResolver, PID );
@@ -705,6 +735,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( "true" );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals( "Use Fallback Repositories", true, config.useFallbackRepositories() );
@@ -718,6 +749,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.localRepository" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn( null );
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.useFallbackRepositories" ) ).andReturn( null );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         assertEquals("Use Fallback Repositories", true, config.useFallbackRepositories());
@@ -737,6 +769,7 @@ public class ConfigurationImplTest
         expect( propertyResolver.get( "org.ops4j.pax.url.mvn.settings" ) ).andReturn(
             validSettings.getAbsolutePath()
         );
+        expect( propertyResolver.get( "org.talend.esb.vault.access.key" ) ).andReturn( null );
         replay( propertyResolver );
         MavenConfiguration config = new MavenConfigurationImpl( propertyResolver, PID );
         List<MavenRepositoryURL> repositories = config.getRepositories();

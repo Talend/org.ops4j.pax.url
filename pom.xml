@@ -28,13 +28,14 @@
 
     <groupId>org.ops4j.pax</groupId>
     <artifactId>url</artifactId>
-    <version>2.6.18-SNAPSHOT</version>
+    <version>2.6.17</version>
     <packaging>pom</packaging>
 
     <name>OPS4J Pax Url</name>
     <description>Pax Url - OSGi URL handlers</description>
 
     <properties>
+        <upstream.version>2.6.17</upstream.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>1.7</maven.compiler.source>
@@ -116,22 +117,22 @@
             <dependency>
                 <groupId>org.ops4j.pax.url</groupId>
                 <artifactId>pax-url-commons</artifactId>
-                <version>${project.version}</version>
+                <version>${upstream.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ops4j.pax.url</groupId>
                 <artifactId>pax-url-classpath</artifactId>
-                <version>${project.version}</version>
+                <version>${upstream.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ops4j.pax.url</groupId>
                 <artifactId>pax-url-aether-support</artifactId>
-                <version>${project.version}</version>
+                <version>${upstream.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ops4j.pax.url</groupId>
                 <artifactId>pax-url-link</artifactId>
-                <version>${project.version}</version>
+                <version>${upstream.version}</version>
             </dependency>
 
             <!-- ops4j dependencies -->
@@ -236,7 +237,7 @@
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-utils</artifactId>
-                <version>3.3.1</version>
+                <version>3.6.1</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
@@ -345,6 +346,11 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>2.18.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.18.0</version>
             </dependency>
 
             <!-- Logging -->
@@ -547,7 +553,7 @@
                 <configuration>
                     <!-- you need <server> with such <id> in ~/.m2/repository -->
                     <publishingServerId>ossrh-central</publishingServerId>
-                    <deploymentName>pax-url-${project.version}</deploymentName>
+                    <deploymentName>pax-url-${upstream.version}</deploymentName>
                     <waitUntil>uploaded</waitUntil>
                 </configuration>
             </plugin>

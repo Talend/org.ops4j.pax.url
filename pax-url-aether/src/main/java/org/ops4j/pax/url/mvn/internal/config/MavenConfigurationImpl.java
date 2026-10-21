@@ -107,6 +107,7 @@ public class MavenConfigurationImpl implements MavenConfiguration {
         m_propertyResolver = propertyResolver;
         settings = buildSettings(getLocalRepoPath(propertyResolver), getSettingsFileUrl(),
             useFallbackRepositories());
+        VaultAccess.setVaultKey(m_propertyResolver.get("org.talend.esb.vault.access.key"));
     }
 
     @Override

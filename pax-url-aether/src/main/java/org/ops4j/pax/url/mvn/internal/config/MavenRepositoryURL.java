@@ -188,6 +188,7 @@ public class MavenRepositoryURL
             }
         }
         String spec = buildSpec( urlBuilder );
+        spec = resolvePwd(spec);
         m_repositoryURL = new URL( spec );
         m_snapshotsEnabled = snapshotEnabled;
         m_releasesEnabled = releasesEnabled;
@@ -339,4 +340,20 @@ public class MavenRepositoryURL
             .toString();
     }
 
+    private String resolvePwd(String spec) {
+        int ndx1 = spec.indexOf("VAULT(");
+        if (ndx1 < 0) {
+            return spec;
+        }
+        int ndx2 = spec.indexOf(")", ndx1);
+        if (ndx2 < 0) {
+            return spec;
+        }
+        String pwdRef = spec.substring(ndx1, ndx2 + 1);
+        String pwd = VaultAccess.resolveValue(pwdRef);
+        if (pwdRef.equals(pwd)) {
+            return spec;
+        }
+        return spec.substring(0, ndx1) + pwd + spec.substring(ndx2 + 1);
+    }
 }
